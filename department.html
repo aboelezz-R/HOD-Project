@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Maids.cc — Department</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #eef0f7; display: flex; height: 100vh; overflow: hidden; color: #111827; }
+
+    /* Sidebar */
+    .sidebar { width: 228px; min-width: 228px; background: #0f1d42; display: flex; flex-direction: column; height: 100vh; }
+    .sb-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .sb-logo { font-size: 16px; font-weight: 700; color: #fff; }
+    .sb-collapse { width: 28px; height: 28px; border-radius: 7px; background: rgba(255,255,255,0.07); border: none; color: rgba(255,255,255,0.45); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .sb-nav { padding: 14px 10px 0; flex: 1; }
+    .sb-label { font-size: 10px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 0 6px; margin-bottom: 6px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; cursor: pointer; color: rgba(255,255,255,0.55); font-size: 13.5px; font-weight: 500; position: relative; margin-bottom: 1px; text-decoration: none; transition: background 0.12s; }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
+    .nav-item.active { background: rgba(255,255,255,0.09); color: #fff; }
+    .nav-item.active::before { content: ''; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; background: #ee6124; border-radius: 0 2px 2px 0; }
+    .nav-badge { margin-left: auto; background: rgba(255,255,255,0.13); color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+    .sb-footer { padding: 14px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px; }
+    .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: #25499b; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .avatar-name { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .avatar-role { font-size: 11px; color: rgba(255,255,255,0.38); }
+    .sb-footer { transition: background 0.12s; }
+    .sb-footer:hover { background: rgba(255,255,255,0.05); }
+    .user-menu { position: absolute; bottom: 100%; left: 0; right: 0; background: #162645; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 4px; margin-bottom: 4px; display: none; z-index: 50; box-shadow: 0 -8px 24px rgba(0,0,0,0.35); }
+    .user-menu.show { display: block; }
+    .user-menu-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 7px; color: #f87171; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.12s; }
+    .user-menu-item:hover { background: rgba(239,68,68,0.14); }
+
+    /* Main */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .topbar { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0 28px; height: 46px; display: flex; align-items: center; font-size: 13px; color: #6b7280; flex-shrink: 0; }
+    .bc-link { color: #6b7280; text-decoration: none; }
+    .bc-link:hover { color: #25499b; }
+    .bc-sep { margin: 0 8px; color: #d1d5db; }
+    .bc-current { color: #111827; font-weight: 500; }
+    .content { flex: 1; overflow-y: auto; padding: 22px 26px; }
+
+    /* Back button */
+    .back-btn { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; color: #374151; background: #fff; border: 1px solid #d1d5db; border-radius: 8px; padding: 7px 14px; cursor: pointer; margin-bottom: 18px; text-decoration: none; transition: background 0.12s; }
+    .back-btn:hover { background: #f9fafb; }
+
+    /* Dept header */
+    .dept-header { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px 22px; display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+    .dept-big-icon { width: 50px; height: 50px; border-radius: 12px; background: #ede9fe; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .dept-header-info { flex: 1; min-width: 0; }
+    .dept-big-name { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 5px; }
+    .dept-rename-input { font-size: 22px; font-weight: 700; color: #111827; border: none; border-bottom: 2px solid #25499b; outline: none; background: transparent; font-family: inherit; padding: 2px 0; width: 100%; max-width: 400px; margin-bottom: 5px; display: block; }
+    .dept-stats { display: flex; align-items: center; gap: 14px; font-size: 13px; color: #6b7280; }
+    .dept-stat { display: flex; align-items: center; gap: 5px; }
+    .dept-header-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .icon-btn { width: 30px; height: 30px; border-radius: 7px; border: 1px solid #e5e7eb; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6b7280; transition: all 0.12s; }
+    .icon-btn:hover { background: #f3f4f6; color: #111827; }
+    .icon-btn.danger:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+
+    /* Panels */
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #f3f4f6; flex-shrink: 0; }
+    .panel-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #111827; }
+    .panel-count { font-size: 13px; color: #6b7280; font-weight: 400; }
+    .btn-sm { background: #25499b; color: #fff; border: none; padding: 7px 14px; border-radius: 50px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background 0.15s; white-space: nowrap; }
+    .btn-sm:hover { background: #1e3d87; }
+
+    /* Teams panel */
+    .panel-body { padding: 12px 16px; }
+    .panel-empty { text-align: center; padding: 26px 16px; color: #9ca3af; font-size: 13px; line-height: 1.6; }
+    .team-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin-bottom: 8px; transition: border-color 0.15s; }
+    .team-card:last-child { margin-bottom: 0; }
+    .team-card:hover { border-color: #93a8d8; }
+    .team-name { font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 2px; }
+    .team-meta { font-size: 12px; color: #9ca3af; }
+    .team-arrow { color: #c4c9d8; font-size: 18px; }
+
+    /* SLA table */
+    .sla-wrap { overflow-x: auto; flex: 1; }
+    .sla-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+    .sla-table thead th { font-size: 11.5px; font-weight: 600; color: #9ca3af; letter-spacing: 0.03em; padding: 10px 12px; border-bottom: 1px solid #f3f4f6; text-align: left; white-space: nowrap; }
+    .sla-table thead th:first-child { width: 36%; }
+    .sla-table thead th:last-child { width: 60px; }
+    .sla-table tbody td { font-size: 13px; color: #374151; padding: 9px 12px; border-bottom: 1px solid #f9fafb; vertical-align: middle; white-space: nowrap; }
+    .sla-table tbody tr:last-child td { border-bottom: none; }
+
+    /* Type row */
+    .type-row > td:first-child { display: flex; align-items: center; gap: 6px; font-weight: 600; color: #111827; }
+    .chevron-btn { background: none; border: none; cursor: pointer; color: #9ca3af; display: flex; align-items: center; padding: 2px; transition: transform 0.18s; flex-shrink: 0; }
+    .chevron-btn.open { transform: rotate(0deg); }
+    .chevron-btn.closed { transform: rotate(-90deg); }
+    .type-name-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .type-actions { display: flex; align-items: center; gap: 3px; }
+    .tbl-icon-btn { width: 24px; height: 24px; border-radius: 5px; border: none; background: none; color: #9ca3af; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
+    .tbl-icon-btn:hover { background: #f3f4f6; color: #374151; }
+    .tbl-icon-btn.danger:hover { background: #fef2f2; color: #dc2626; }
+    .tbl-icon-btn.save:hover { background: #ecfdf5; color: #059669; }
+    .tbl-icon-btn.save { color: #059669; }
+
+    /* Priority row */
+    .priority-row > td:first-child { padding-left: 34px; display: flex; align-items: center; gap: 7px; }
+    .priority-label { font-size: 13px; font-weight: 500; }
+
+    /* Inline SLA input */
+    .sla-inline-input { width: 54px; padding: 4px 6px; border: 1.5px solid #25499b; border-radius: 5px; font-size: 12px; font-family: inherit; color: #111827; outline: none; background: #f0f4ff; text-align: center; }
+    .sla-inline-input:focus { background: #fff; }
+
+    /* Inline add type row */
+    .add-type-row { display: none; }
+    .add-type-row td { background: #f0f4ff; padding: 10px 12px; }
+    .add-type-inner { display: flex; align-items: center; gap: 8px; }
+    .add-type-input { flex: 1; border: none; background: transparent; font-size: 13.5px; color: #111827; outline: none; font-family: inherit; }
+    .add-type-hint { font-size: 11.5px; color: #9ca3af; white-space: nowrap; }
+
+    /* SLA empty */
+    .sla-empty { padding: 36px 20px; text-align: center; color: #9ca3af; font-size: 13px; line-height: 1.6; display: none; flex-direction: column; align-items: center; gap: 6px; }
+    .sla-empty-icon { width: 44px; height: 44px; border-radius: 10px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+
+    /* Team modal */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(15,29,66,0.35); backdrop-filter: blur(3px); z-index: 200; align-items: center; justify-content: center; }
+    .overlay.show { display: flex; }
+    .modal { background: #fff; border-radius: 16px; padding: 28px; width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); }
+    .modal-hd { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
+    .modal-icon { width: 40px; height: 40px; border-radius: 10px; background: #ede9fe; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .modal-title { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 3px; }
+    .modal-sub { font-size: 13px; color: #6b7280; line-height: 1.5; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 13px; font-weight: 600; color: #374151; }
+    .req { color: #ef4444; }
+    .form-input { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13.5px; color: #111827; outline: none; font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s; }
+    .form-input:focus { border-color: #25499b; box-shadow: 0 0 0 3px rgba(37,73,155,0.1); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .btn-cancel { background: #fff; border: 1px solid #d1d5db; color: #374151; padding: 8px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 500; cursor: pointer; font-family: inherit; }
+    .btn-cancel:hover { background: #f9fafb; }
+    .btn-primary { background: #25499b; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit; transition: background 0.15s; }
+    .btn-primary:hover { background: #1e3d87; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sb-header">
+      <span class="sb-logo">maids.cc</span>
+      <button class="sb-collapse">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+      </button>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-label">Workspace</div>
+      <a class="nav-item active" href="dashboard.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Overview
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        Tickets
+        <span class="nav-badge">4</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Families
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Housemaids
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Schedule
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Reports
+      </a>
+    </div>
+    <div style="position:relative">
+      <div class="user-menu" id="userMenu">
+        <div class="user-menu-item" onclick="logout()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Log out
+        </div>
+      </div>
+      <div class="sb-footer" onclick="toggleUserMenu()" style="cursor:pointer">
+        <div class="user-avatar" id="avatarEl"></div>
+        <div style="min-width:0;flex:1">
+          <div class="avatar-name" id="displayNameEl"></div>
+          <div class="avatar-role">Head of Department</div>
+        </div>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" style="flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <a class="bc-link" href="dashboard.html">Departments</a>
+      <span class="bc-sep">›</span>
+      <span class="bc-current" id="bcDeptName">Department</span>
+    </div>
+
+    <div class="content">
+      <a class="back-btn" href="dashboard.html">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to departments
+      </a>
+
+      <!-- Dept header -->
+      <div class="dept-header">
+        <div class="dept-big-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="1.8"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6h4"/><path d="M18 9h2a2 2 0 0 1 2 2v9h-4"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+        </div>
+        <div class="dept-header-info">
+          <div class="dept-big-name" id="deptTitle">Loading…</div>
+          <div class="dept-stats">
+            <span class="dept-stat">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <span id="teamCountStat">0 teams</span>
+            </span>
+            <span class="dept-stat">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              <span id="typeCountStat">0 ticket types</span>
+            </span>
+            <span class="dept-stat">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span id="createdStat"></span>
+            </span>
+          </div>
+        </div>
+        <div class="dept-header-actions">
+          <!-- Rename -->
+          <button class="icon-btn" onclick="startRename()" title="Rename department">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <!-- Delete -->
+          <button class="icon-btn danger" onclick="deleteDept()" title="Delete department">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Two panels -->
+      <div class="panels">
+
+        <!-- Teams -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Teams <span class="panel-count" id="teamCount">0</span>
+            </div>
+            <button class="btn-sm" onclick="openTeamModal()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create team
+            </button>
+          </div>
+          <div class="panel-body" id="teamsBody">
+            <div class="panel-empty">No teams yet — use "Create team" to build one inside this department.</div>
+          </div>
+        </div>
+
+        <!-- Ticket types & SLAs -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              Ticket types &amp; SLAs <span class="panel-count" id="typeCount">0</span>
+            </div>
+            <button class="btn-sm" onclick="showAddTypeRow()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add type
+            </button>
+          </div>
+          <div class="sla-wrap">
+            <div class="sla-empty" id="slaEmpty">
+              <div class="sla-empty-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              </div>
+              No ticket types yet — add the first type this department works on.
+            </div>
+            <table class="sla-table" id="slaTable" style="display:none">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Assign</th>
+                  <th>Resolve</th>
+                  <th>Max on hold</th>
+                  <th>Next update</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="slaBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Team Modal -->
+  <div class="overlay" id="teamOverlay" onclick="if(event.target===this) closeTeamModal()">
+    <div class="modal">
+      <div class="modal-hd">
+        <div class="modal-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div>
+          <div class="modal-title">Create a team</div>
+          <div class="modal-sub">Give the team a name — you can add supervisors and agents once it exists.</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Team name <span class="req">*</span></div>
+        <input class="form-input" id="teamNameInput" placeholder="e.g. Morning Shift · Quality Control" onkeydown="if(event.key==='Enter') createTeam()">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeTeamModal()">Cancel</button>
+        <button class="btn-primary" onclick="createTeam()">Create team</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from "./js/supabase.js"
+    import { showToast, showConfirm } from "./js/ui.js"
+
+    const params = new URLSearchParams(location.search)
+    const deptId = params.get("id")
+    if (!deptId) { location.href = "dashboard.html"; throw 0 }
+
+    let user = JSON.parse(localStorage.getItem("hod"))
+    if (!user) { location.href = "index.html"; throw 0 }
+
+    function displayName(u) { return u.username.split('.').map(p => p[0].toUpperCase() + p.slice(1)).join(' ') }
+    function initials(u) { return u.username.split('.').map(p => p[0].toUpperCase()).join('') }
+    function fmtDate(iso) {
+      const d = new Date(iso)
+      return 'Created ' + d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + ' · ' + d.toTimeString().slice(0,5)
+    }
+    function parseDuration(str) {
+      if (!str) return 0
+      str = str.trim().toLowerCase().replace(/\s+/g,'')
+      let t = 0
+      const h = str.match(/(\d+)h/); if (h) t += parseInt(h[1]) * 60
+      const m = str.match(/(\d+)m/); if (m) t += parseInt(m[1])
+      return t || parseInt(str) || 0
+    }
+    function fmtDur(mins) {
+      if (!mins && mins !== 0) return '–'
+      const h = Math.floor(mins / 60), m = mins % 60
+      if (h === 0) return m + 'm'
+      if (m === 0) return h + 'h'
+      return h + 'h ' + m + 'm'
+    }
+
+    // If all 4 priorities share the same value for a column → return that value, else null (show —)
+    function typeSummary(slaByPriority) {
+      const keys = ['low','medium','high','urgent']
+      const cols = ['assign_min','resolve_min','max_hold_min','next_update_min']
+      const result = {}
+      for (const col of cols) {
+        const vals = keys.map(k => slaByPriority[k]?.[col]).filter(v => v != null)
+        result[col] = (vals.length === 4 && vals.every(v => v === vals[0])) ? vals[0] : null
+      }
+      return result
+    }
+
+    document.getElementById("avatarEl").textContent = initials(user)
+    document.getElementById("displayNameEl").textContent = displayName(user)
+
+    let dept = null
+    let expandedTypes = new Set()
+
+    // In-memory caches for inline editing
+    const slaCache = {}           // slaId → sla object
+    const typeSlasCache = {}      // typeId → { priorityKey → sla }
+
+    const PRIORITIES = [
+      { key:'low',    label:'Low',    color:'#9ca3af' },
+      { key:'medium', label:'Medium', color:'#f59e0b' },
+      { key:'high',   label:'High',   color:'#f97316' },
+      { key:'urgent', label:'Urgent', color:'#ef4444' },
+    ]
+
+    function priorityIcon(p) {
+      const c = p.color
+      const shapes = {
+        low:    `<rect x="0" y="8" width="3" height="4" rx="0.5" fill="${c}"/><rect x="4.5" y="6" width="3" height="6" rx="0.5" fill="${c}" opacity="0.35"/><rect x="9" y="4" width="3" height="8" rx="0.5" fill="${c}" opacity="0.2"/>`,
+        medium: `<rect x="0" y="4" width="3" height="8" rx="0.5" fill="${c}"/><rect x="4.5" y="6" width="3" height="6" rx="0.5" fill="${c}"/><rect x="9" y="8" width="3" height="4" rx="0.5" fill="${c}" opacity="0.45"/>`,
+        high:   `<rect x="0" y="2" width="3" height="10" rx="0.5" fill="${c}"/><rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="${c}"/><rect x="9" y="7" width="3" height="5" rx="0.5" fill="${c}" opacity="0.55"/>`,
+        urgent: `<rect x="0" y="1" width="3" height="11" rx="0.5" fill="${c}"/><rect x="4.5" y="3" width="3" height="9" rx="0.5" fill="${c}"/><rect x="9" y="5" width="3" height="7" rx="0.5" fill="${c}"/>`,
+      }
+      return `<svg width="14" height="12" viewBox="0 0 12 12">${shapes[p.key]}</svg>`
+    }
+
+    const CHEVRON_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>`
+    const SLIDERS_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>`
+    const CHECK_SVG  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`
+    const CROSS_SVG  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+    const TRASH_SVG  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`
+
+    // ── Load dept ────────────────────────────────────────────
+    async function loadDept() {
+      const { data, error } = await supabase.from("departments").select("*").eq("id", deptId).single()
+      if (error || !data) { location.href = "dashboard.html"; return }
+      dept = data
+      document.getElementById("deptTitle").textContent = data.name
+      document.getElementById("bcDeptName").textContent = data.name
+      document.getElementById("createdStat").textContent = fmtDate(data.created_at)
+      loadTeams()
+      loadTicketTypes()
+    }
+
+    // ── Teams ────────────────────────────────────────────────
+    async function loadTeams() {
+      const { data } = await supabase.from("teams").select("*").eq("department_id", deptId).order("created_at")
+      const teams = data || []
+      document.getElementById("teamCount").textContent = teams.length
+      document.getElementById("teamCountStat").textContent = teams.length + ' team' + (teams.length !== 1 ? 's' : '')
+      const box = document.getElementById("teamsBody")
+      if (teams.length === 0) {
+        box.innerHTML = `<div class="panel-empty">No teams yet — use "Create team" to build one inside this department.</div>`
+      } else {
+        box.innerHTML = teams.map(t => `
+          <div class="team-card" onclick="location.href='team.html?id=${t.id}'">
+            <div><div class="team-name">${t.name}</div><div class="team-meta">Click to manage members</div></div>
+            <div class="team-arrow">›</div>
+          </div>`).join('')
+      }
+    }
+
+    window.openTeamModal = function() {
+      document.getElementById("teamOverlay").classList.add("show")
+      setTimeout(() => document.getElementById("teamNameInput").focus(), 80)
+    }
+    window.closeTeamModal = function() {
+      document.getElementById("teamOverlay").classList.remove("show")
+      document.getElementById("teamNameInput").value = ""
+    }
+    window.createTeam = async function() {
+      const name = document.getElementById("teamNameInput").value.trim()
+      if (!name) return
+      const { error } = await supabase.from("teams").insert({ name, department_id: deptId })
+      if (error) { showToast(error.message); return }
+      closeTeamModal()
+      showToast('Team created.', 'success')
+      loadTeams()
+    }
+
+    // ── Ticket types ─────────────────────────────────────────
+    async function loadTicketTypes() {
+      const { data: types } = await supabase.from("ticket_types").select("*").eq("department_id", deptId).order("created_at")
+      if (!types) return
+
+      document.getElementById("typeCount").textContent = types.length
+      document.getElementById("typeCountStat").textContent = types.length + ' ticket type' + (types.length !== 1 ? 's' : '')
+
+      if (types.length === 0) {
+        document.getElementById("slaEmpty").style.display = "flex"
+        document.getElementById("slaTable").style.display = "none"
+        document.getElementById("slaBody").innerHTML = ""
+        return
+      }
+
+      const typeIds = types.map(t => t.id)
+      const { data: slas } = await supabase.from("ticket_slas").select("*").in("ticket_type_id", typeIds)
+
+      // Rebuild caches
+      Object.keys(slaCache).forEach(k => delete slaCache[k])
+      Object.keys(typeSlasCache).forEach(k => delete typeSlasCache[k])
+
+      ;(slas || []).forEach(s => {
+        slaCache[s.id] = s
+        if (!typeSlasCache[s.ticket_type_id]) typeSlasCache[s.ticket_type_id] = {}
+        typeSlasCache[s.ticket_type_id][s.priority] = s
+      })
+
+      document.getElementById("slaEmpty").style.display = "none"
+      document.getElementById("slaTable").style.display = "table"
+      renderSlaRows(types)
+    }
+
+    function renderSlaRows(types) {
+      const body = document.getElementById("slaBody")
+      body.innerHTML = ""
+
+      types.forEach(type => {
+        const isExpanded = expandedTypes.has(type.id)
+        const typeSlas = typeSlasCache[type.id] || {}
+        const sum = typeSummary(typeSlas)
+
+        // ── Type row
+        const tr = document.createElement('tr')
+        tr.className = 'type-row'
+        tr.id = `type-row-${type.id}`
+        tr.innerHTML = `
+          <td>
+            <button class="chevron-btn ${isExpanded ? 'open' : 'closed'}" onclick="toggleType('${type.id}')">${CHEVRON_SVG}</button>
+            <span class="type-name-text">${type.name}</span>
+          </td>
+          <td>${sum.assign_min !== null ? fmtDur(sum.assign_min) : '—'}</td>
+          <td>${sum.resolve_min !== null ? fmtDur(sum.resolve_min) : '—'}</td>
+          <td>${sum.max_hold_min !== null ? fmtDur(sum.max_hold_min) : '—'}</td>
+          <td>${sum.next_update_min !== null ? fmtDur(sum.next_update_min) : '—'}</td>
+          <td>
+            <div class="type-actions">
+              <button class="tbl-icon-btn" onclick="editTypeRow('${type.id}')" title="Edit all SLAs">${SLIDERS_SVG}</button>
+              <button class="tbl-icon-btn danger" title="Delete type" onclick="deleteType('${type.id}','${type.name.replace(/'/g,"\\'")}')"> ${TRASH_SVG}</button>
+            </div>
+          </td>`
+        body.appendChild(tr)
+
+        // ── Priority sub-rows
+        PRIORITIES.forEach(p => {
+          const sla = typeSlas[p.key]
+          const row = document.createElement('tr')
+          row.className = 'priority-row'
+          row.id = `priority-row-${type.id}-${p.key}`
+          row.style.display = isExpanded ? 'table-row' : 'none'
+          row.innerHTML = `
+            <td>${priorityIcon(p)}<span class="priority-label" style="color:${p.color}">${p.label}</span></td>
+            <td>${sla ? fmtDur(sla.assign_min) : '30m'}</td>
+            <td>${sla ? fmtDur(sla.resolve_min) : '8h'}</td>
+            <td>${sla ? fmtDur(sla.max_hold_min) : '4h'}</td>
+            <td>${sla ? fmtDur(sla.next_update_min) : '2h'}</td>
+            <td>
+              <button class="tbl-icon-btn" onclick="editPriorityRow('${sla?.id}','${type.id}','${p.key}')" title="Edit SLA">${SLIDERS_SVG}</button>
+            </td>`
+          body.appendChild(row)
+        })
+      })
+
+      // Inline add row (always at end, hidden by default)
+      const addTr = document.createElement('tr')
+      addTr.className = 'add-type-row'
+      addTr.id = 'addTypeRow'
+      addTr.innerHTML = `
+        <td colspan="6">
+          <div class="add-type-inner">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            <input class="add-type-input" id="newTypeInput" placeholder="New type name…" onkeydown="handleTypeKey(event)">
+            <span class="add-type-hint">↵ to add</span>
+          </div>
+        </td>`
+      body.appendChild(addTr)
+    }
+
+    window.toggleType = function(id) {
+      expandedTypes.has(id) ? expandedTypes.delete(id) : expandedTypes.add(id)
+      loadTicketTypes()
+    }
+
+    window.showAddTypeRow = function() {
+      document.getElementById("slaEmpty").style.display = "none"
+      document.getElementById("slaTable").style.display = "table"
+      let addRow = document.getElementById("addTypeRow")
+      if (!addRow) {
+        // Table exists but row wasn't rendered (0 types state)
+        const body = document.getElementById("slaBody")
+        const addTr = document.createElement('tr')
+        addTr.className = 'add-type-row'
+        addTr.id = 'addTypeRow'
+        addTr.innerHTML = `
+          <td colspan="6"><div class="add-type-inner">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            <input class="add-type-input" id="newTypeInput" placeholder="New type name…" onkeydown="handleTypeKey(event)">
+            <span class="add-type-hint">↵ to add</span>
+          </div></td>`
+        body.appendChild(addTr)
+        addRow = addTr
+      }
+      addRow.style.display = 'table-row'
+      setTimeout(() => document.getElementById("newTypeInput")?.focus(), 60)
+    }
+
+    window.handleTypeKey = async function(e) {
+      if (e.key === 'Escape') { e.target.closest('.add-type-row').style.display = 'none'; return }
+      if (e.key !== 'Enter') return
+      const name = e.target.value.trim()
+      if (!name) return
+      e.target.disabled = true
+
+      const { data: newType, error } = await supabase.from("ticket_types").insert({ name, department_id: deptId }).select().single()
+      if (error) { showToast(error.message); e.target.disabled = false; return }
+
+      await supabase.from("ticket_slas").insert(
+        PRIORITIES.map(p => ({ ticket_type_id: newType.id, priority: p.key, assign_min:30, resolve_min:480, max_hold_min:240, next_update_min:120 }))
+      )
+
+      expandedTypes.add(newType.id)
+      loadTicketTypes()
+    }
+
+    window.deleteType = async function(id, name) {
+      if (!await showConfirm(`"${name}" and all its SLA rules will be permanently deleted.`, { title: 'Delete ticket type?' })) return
+      await supabase.from("ticket_types").delete().eq("id", id)
+      showToast('Ticket type deleted.', 'success')
+      loadTicketTypes()
+    }
+
+    // ── Inline edit: TYPE row (sets all 4 priorities to same values) ──
+    window.editTypeRow = function(typeId) {
+      const typeSlas = typeSlasCache[typeId] || {}
+      const sum = typeSummary(typeSlas)
+      // Pre-fill with current common value or sensible defaults
+      const a = fmtDur(sum.assign_min ?? 30)
+      const r = fmtDur(sum.resolve_min ?? 480)
+      const mh = fmtDur(sum.max_hold_min ?? 240)
+      const nu = fmtDur(sum.next_update_min ?? 120)
+
+      const row = document.getElementById(`type-row-${typeId}`)
+      const cells = row.querySelectorAll('td')
+      cells[1].innerHTML = `<input class="sla-inline-input" id="te-a" value="${a}">`
+      cells[2].innerHTML = `<input class="sla-inline-input" id="te-r" value="${r}">`
+      cells[3].innerHTML = `<input class="sla-inline-input" id="te-mh" value="${mh}">`
+      cells[4].innerHTML = `<input class="sla-inline-input" id="te-nu" value="${nu}">`
+      cells[5].innerHTML = `<div class="type-actions">
+        <button class="tbl-icon-btn save" onclick="saveTypeRow('${typeId}')">${CHECK_SVG}</button>
+        <button class="tbl-icon-btn" onclick="loadTicketTypes()">${CROSS_SVG}</button>
+      </div>`
+
+      // Enter/Escape on any input
+      row.querySelectorAll('.sla-inline-input').forEach(inp => {
+        inp.addEventListener('keydown', e => {
+          if (e.key === 'Enter') saveTypeRow(typeId)
+          if (e.key === 'Escape') loadTicketTypes()
+        })
+      })
+      cells[1].querySelector('input').focus()
+    }
+
+    window.saveTypeRow = async function(typeId) {
+      const assign_min      = parseDuration(document.getElementById("te-a")?.value)
+      const resolve_min     = parseDuration(document.getElementById("te-r")?.value)
+      const max_hold_min    = parseDuration(document.getElementById("te-mh")?.value)
+      const next_update_min = parseDuration(document.getElementById("te-nu")?.value)
+      const typeSlas = typeSlasCache[typeId] || {}
+      await Promise.all(
+        PRIORITIES.map(p => {
+          const sla = typeSlas[p.key]
+          if (!sla) return null
+          return supabase.from("ticket_slas").update({ assign_min, resolve_min, max_hold_min, next_update_min }).eq("id", sla.id)
+        }).filter(Boolean)
+      )
+      loadTicketTypes()
+    }
+
+    // ── Inline edit: PRIORITY row ──
+    window.editPriorityRow = async function(slaId, typeId, priorityKey) {
+      let id = slaId === 'undefined' || !slaId ? null : slaId
+
+      // Auto-create SLA row if it doesn't exist
+      if (!id) {
+        const { data, error } = await supabase.from("ticket_slas").insert({
+          ticket_type_id: typeId, priority: priorityKey,
+          assign_min:30, resolve_min:480, max_hold_min:240, next_update_min:120
+        }).select().single()
+        if (error) { showToast(error.message); return }
+        slaCache[data.id] = data
+        if (!typeSlasCache[typeId]) typeSlasCache[typeId] = {}
+        typeSlasCache[typeId][priorityKey] = data
+        id = data.id
+      }
+
+      const sla = slaCache[id]
+      if (!sla) { loadTicketTypes(); return }
+
+      const row = document.getElementById(`priority-row-${typeId}-${priorityKey}`)
+      const cells = row.querySelectorAll('td')
+      cells[1].innerHTML = `<input class="sla-inline-input" id="pe-a-${id}" value="${fmtDur(sla.assign_min)}">`
+      cells[2].innerHTML = `<input class="sla-inline-input" id="pe-r-${id}" value="${fmtDur(sla.resolve_min)}">`
+      cells[3].innerHTML = `<input class="sla-inline-input" id="pe-mh-${id}" value="${fmtDur(sla.max_hold_min)}">`
+      cells[4].innerHTML = `<input class="sla-inline-input" id="pe-nu-${id}" value="${fmtDur(sla.next_update_min)}">`
+      cells[5].innerHTML = `<div class="type-actions">
+        <button class="tbl-icon-btn save" onclick="savePriorityRow('${id}','${typeId}')">${CHECK_SVG}</button>
+        <button class="tbl-icon-btn" onclick="loadTicketTypes()">${CROSS_SVG}</button>
+      </div>`
+
+      row.querySelectorAll('.sla-inline-input').forEach(inp => {
+        inp.addEventListener('keydown', e => {
+          if (e.key === 'Enter') savePriorityRow(id, typeId)
+          if (e.key === 'Escape') loadTicketTypes()
+        })
+      })
+      cells[1].querySelector('input').focus()
+    }
+
+    window.savePriorityRow = async function(slaId, typeId) {
+      const assign_min      = parseDuration(document.getElementById(`pe-a-${slaId}`)?.value)
+      const resolve_min     = parseDuration(document.getElementById(`pe-r-${slaId}`)?.value)
+      const max_hold_min    = parseDuration(document.getElementById(`pe-mh-${slaId}`)?.value)
+      const next_update_min = parseDuration(document.getElementById(`pe-nu-${slaId}`)?.value)
+      const { error } = await supabase.from("ticket_slas").update({ assign_min, resolve_min, max_hold_min, next_update_min }).eq("id", slaId)
+      if (error) { showToast(error.message); return }
+      showToast('SLA saved.', 'success')
+      loadTicketTypes()
+    }
+
+    // ── Rename dept ──────────────────────────────────────────
+    window.startRename = function() {
+      const titleEl = document.getElementById("deptTitle")
+      const currentName = dept.name
+      const input = document.createElement('input')
+      input.className = 'dept-rename-input'
+      input.value = currentName
+      input.id = 'deptTitle'
+      titleEl.replaceWith(input)
+      input.focus(); input.select()
+
+      let done = false
+      async function commit() {
+        if (done) return; done = true
+        const newName = input.value.trim() || currentName
+        const div = document.createElement('div')
+        div.className = 'dept-big-name'; div.id = 'deptTitle'; div.textContent = newName
+        input.replaceWith(div)
+        if (newName !== currentName) {
+          const { error } = await supabase.from("departments").update({ name: newName }).eq("id", deptId)
+          if (error) { showToast(error.message); return }
+          showToast('Department renamed.', 'success')
+          dept.name = newName
+          document.getElementById("bcDeptName").textContent = newName
+        }
+      }
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') commit()
+        if (e.key === 'Escape') { done = true; const div = document.createElement('div'); div.className='dept-big-name'; div.id='deptTitle'; div.textContent=currentName; input.replaceWith(div) }
+      })
+      input.addEventListener('blur', commit)
+    }
+
+    // ── Delete dept ──────────────────────────────────────────
+    window.deleteDept = async function() {
+      if (!await showConfirm(`All teams, members, and ticket types inside "${dept?.name}" will be permanently deleted.`, { title: 'Delete department?' })) return
+      await supabase.from("departments").delete().eq("id", deptId)
+      location.href = "dashboard.html"
+    }
+
+    loadDept()
+
+    window.toggleUserMenu = function() {
+      document.getElementById("userMenu").classList.toggle("show")
+    }
+    window.logout = function() {
+      localStorage.removeItem("hod")
+      location.href = "index.html"
+    }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.sb-footer') && !e.target.closest('.user-menu')) {
+        document.getElementById("userMenu")?.classList.remove("show")
+      }
+    })
+  </script>
+
+</body>
+</html>

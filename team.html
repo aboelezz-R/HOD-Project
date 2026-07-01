@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Maids.cc — Team</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #eef0f7; display: flex; height: 100vh; overflow: hidden; color: #111827; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 228px; min-width: 228px; background: #0f1d42; display: flex; flex-direction: column; height: 100vh; }
+    .sb-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .sb-logo { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.2px; }
+    .sb-collapse { width: 28px; height: 28px; border-radius: 7px; background: rgba(255,255,255,0.07); border: none; color: rgba(255,255,255,0.45); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .sb-nav { padding: 14px 10px 0; flex: 1; }
+    .sb-label { font-size: 10px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 0 6px; margin-bottom: 6px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; cursor: pointer; color: rgba(255,255,255,0.55); font-size: 13.5px; font-weight: 500; position: relative; margin-bottom: 1px; text-decoration: none; transition: background 0.12s, color 0.12s; }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
+    .nav-item.active { background: rgba(255,255,255,0.09); color: #fff; }
+    .nav-item.active::before { content: ''; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; background: #ee6124; border-radius: 0 2px 2px 0; }
+    .nav-badge { margin-left: auto; background: rgba(255,255,255,0.13); color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+    .sb-footer { padding: 14px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: #25499b; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .avatar-name { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .avatar-role { font-size: 11px; color: rgba(255,255,255,0.38); }
+    .sb-footer { transition: background 0.12s; }
+    .sb-footer:hover { background: rgba(255,255,255,0.05); }
+    .user-menu { position: absolute; bottom: 100%; left: 0; right: 0; background: #162645; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 4px; margin-bottom: 4px; display: none; z-index: 50; box-shadow: 0 -8px 24px rgba(0,0,0,0.35); }
+    .user-menu.show { display: block; }
+    .user-menu-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 7px; color: #f87171; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.12s; }
+    .user-menu-item:hover { background: rgba(239,68,68,0.14); }
+
+    /* ── Main ── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .topbar { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0 28px; height: 46px; display: flex; align-items: center; font-size: 13px; color: #6b7280; flex-shrink: 0; gap: 0; }
+    .bc-link { color: #6b7280; text-decoration: none; cursor: pointer; }
+    .bc-link:hover { color: #25499b; }
+    .bc-sep { margin: 0 8px; color: #d1d5db; }
+    .bc-current { color: #111827; font-weight: 500; }
+
+    .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+    /* Back button */
+    .back-btn { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; color: #374151; background: #fff; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 14px; cursor: pointer; margin-bottom: 20px; transition: background 0.12s; text-decoration: none; }
+    .back-btn:hover { background: #f9fafb; }
+
+    /* Team header card */
+    .team-header { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 22px 24px; display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+    .team-big-icon { width: 52px; height: 52px; border-radius: 13px; background: #dbeafe; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .team-header-info { flex: 1; min-width: 0; }
+    .team-big-name { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 6px; }
+    .team-stats { display: flex; align-items: center; gap: 16px; font-size: 13px; color: #6b7280; }
+    .team-stat { display: flex; align-items: center; gap: 5px; }
+    .team-header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .icon-btn { width: 32px; height: 32px; border-radius: 7px; border: 1px solid #e5e7eb; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6b7280; transition: background 0.12s, color 0.12s; }
+    .icon-btn.danger:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+
+    /* Add member card */
+    .add-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; margin-bottom: 16px; overflow: hidden; }
+    .add-card-head { display: flex; align-items: center; gap: 8px; padding: 16px 20px; border-bottom: 1px solid #f3f4f6; font-size: 14px; font-weight: 600; color: #111827; }
+    .add-card-body { padding: 16px 20px; display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    .field-label { font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+    .field-input { padding: 9px 13px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13.5px; color: #111827; outline: none; background: #fff; font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s; }
+    .field-input:focus { border-color: #25499b; box-shadow: 0 0 0 3px rgba(37,73,155,0.1); }
+    .field-select { padding: 9px 13px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13.5px; color: #111827; outline: none; background: #fff; font-family: inherit; cursor: pointer; }
+    .btn-add { background: #25499b; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; transition: background 0.15s; height: 40px; }
+    .btn-add:hover { background: #1e3d87; }
+
+    /* Members panels */
+    .members-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid #f3f4f6; }
+    .panel-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #111827; }
+    .panel-badge { background: #f3f4f6; color: #374151; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .panel-body { padding: 8px 0; }
+
+    .member-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 20px; border-bottom: 1px solid #f9fafb; transition: background 0.1s; }
+    .member-row:last-child { border-bottom: none; }
+    .member-row:hover { background: #f9fafb; }
+    .member-left { display: flex; align-items: center; gap: 11px; }
+    .member-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .avatar-sup { background: #ede9fe; color: #6d28d9; }
+    .avatar-agent { background: #fff7ed; color: #c2410c; }
+    .member-name { font-size: 13.5px; font-weight: 500; color: #111827; }
+    .remove-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid transparent; background: none; color: #d1d5db; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
+    .remove-btn:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+
+    .panel-empty { padding: 28px 20px; text-align: center; color: #9ca3af; font-size: 13px; line-height: 1.6; }
+
+    /* Role badges inline */
+    .role-pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .role-sup { background: #ede9fe; color: #6d28d9; }
+    .role-agent { background: #fff7ed; color: #c2410c; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sb-header">
+      <span class="sb-logo">maids.cc</span>
+      <button class="sb-collapse">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+      </button>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-label">Workspace</div>
+      <a class="nav-item active" href="dashboard.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Overview
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        Tickets
+        <span class="nav-badge">4</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Families
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Housemaids
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Schedule
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Reports
+      </a>
+    </div>
+    <div style="position:relative">
+      <div class="user-menu" id="userMenu">
+        <div class="user-menu-item" onclick="logout()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Log out
+        </div>
+      </div>
+      <div class="sb-footer" onclick="toggleUserMenu()" style="cursor:pointer">
+        <div class="avatar" id="avatarEl"></div>
+        <div style="min-width:0;flex:1">
+          <div class="avatar-name" id="displayNameEl"></div>
+          <div class="avatar-role">Head of Department</div>
+        </div>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" style="flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <a class="bc-link" href="dashboard.html">Departments</a>
+      <span class="bc-sep">›</span>
+      <a class="bc-link" id="bcDept" href="#">Department</a>
+      <span class="bc-sep">›</span>
+      <span class="bc-current" id="bcTeam">Team</span>
+    </div>
+
+    <div class="content">
+      <a class="back-btn" id="backBtn" href="#">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to department
+      </a>
+
+      <!-- Team header -->
+      <div class="team-header">
+        <div class="team-big-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="team-header-info">
+          <div class="team-big-name" id="teamTitle">Loading…</div>
+          <div class="team-stats">
+            <span class="team-stat">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+              <span id="memberCountStat">0 members</span>
+            </span>
+            <span class="team-stat">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span id="createdStat"></span>
+            </span>
+          </div>
+        </div>
+        <div class="team-header-actions">
+          <button class="icon-btn danger" onclick="deleteTeam()" title="Delete team">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Add member -->
+      <div class="add-card">
+        <div class="add-card-head">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          Add Member
+        </div>
+        <div class="add-card-body">
+          <div class="field-group">
+            <div class="field-label">Email</div>
+            <input class="field-input" id="memberName" placeholder="name@maids.cc" type="email" style="width:240px" onkeydown="if(event.key==='Enter') addMember()" oninput="this.style.borderColor='';this.style.boxShadow=''">
+          </div>
+          <div class="field-group">
+            <div class="field-label">Role</div>
+            <select class="field-select" id="memberRole">
+              <option value="agent">Agent</option>
+              <option value="supervisor">Supervisor</option>
+            </select>
+          </div>
+          <button class="btn-add" onclick="addMember()">Add member</button>
+        </div>
+      </div>
+
+      <!-- Supervisors + Agents panels -->
+      <div class="members-panels">
+
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><polyline points="15 12 17 14 21 10"/></svg>
+              Supervisors
+              <span class="panel-badge" id="supCount">0</span>
+            </div>
+          </div>
+          <div class="panel-body" id="supBody">
+            <div class="panel-empty">No supervisors yet</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c2410c" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              Agents
+              <span class="panel-badge" id="agentCount">0</span>
+            </div>
+          </div>
+          <div class="panel-body" id="agentBody">
+            <div class="panel-empty">No agents yet</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from "./js/supabase.js"
+    import { showToast, showConfirm } from "./js/ui.js"
+
+    const params = new URLSearchParams(location.search)
+    const teamId = params.get("id")
+    if (!teamId) { location.href = "dashboard.html"; throw 0 }
+
+    let user = JSON.parse(localStorage.getItem("hod"))
+    if (!user) { location.href = "index.html"; throw 0 }
+
+    function displayName(u) {
+      return u.username.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
+    }
+    function initials(u) {
+      return u.username.split('.').map(p => p[0].toUpperCase()).join('')
+    }
+    function fmtDate(iso) {
+      const d = new Date(iso)
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+        ' · ' + d.toTimeString().slice(0, 5)
+    }
+    function memberInitials(email) {
+      const local = email.split('@')[0]
+      return local.split('.').slice(0, 2).map(p => p[0]).join('').toUpperCase() || local[0].toUpperCase()
+    }
+
+    document.getElementById("avatarEl").textContent = initials(user)
+    document.getElementById("displayNameEl").textContent = displayName(user)
+
+    let team = null
+    let deptId = null
+
+    async function loadTeam() {
+      const { data, error } = await supabase.from("teams").select("*").eq("id", teamId).single()
+      if (error || !data) { location.href = "dashboard.html"; return }
+      team = data
+      deptId = data.department_id
+
+      document.getElementById("teamTitle").textContent = data.name
+      document.getElementById("bcTeam").textContent = data.name
+      document.getElementById("createdStat").textContent = "Created " + fmtDate(data.created_at)
+      document.getElementById("backBtn").href = "department.html?id=" + deptId
+      document.getElementById("bcDept").href = "department.html?id=" + deptId
+
+      // Set dept name in breadcrumb
+      const { data: dept } = await supabase.from("departments").select("name").eq("id", deptId).single()
+      if (dept) document.getElementById("bcDept").textContent = dept.name
+
+      loadMembers()
+    }
+
+    async function loadMembers() {
+      const { data } = await supabase
+        .from("team_members").select("*")
+        .eq("team_id", teamId).order("created_at", { ascending: true })
+
+      const members = data || []
+      const sups = members.filter(m => m.role === "supervisor")
+      const agents = members.filter(m => m.role === "agent")
+
+      document.getElementById("memberCountStat").textContent = members.length + " member" + (members.length !== 1 ? "s" : "")
+      document.getElementById("supCount").textContent = sups.length
+      document.getElementById("agentCount").textContent = agents.length
+
+      renderGroup("supBody", sups, "supervisor")
+      renderGroup("agentBody", agents, "agent")
+    }
+
+    function renderGroup(containerId, members, role) {
+      const box = document.getElementById(containerId)
+      if (members.length === 0) {
+        box.innerHTML = `<div class="panel-empty">No ${role}s yet</div>`
+        return
+      }
+      const avatarClass = role === "supervisor" ? "avatar-sup" : "avatar-agent"
+      box.innerHTML = members.map(m => `
+        <div class="member-row" id="row-${m.id}">
+          <div class="member-left">
+            <div class="member-avatar ${avatarClass}">${memberInitials(m.name)}</div>
+            <span class="member-name">${m.name}</span>
+          </div>
+          <button class="remove-btn" onclick="removeMember('${m.id}')" title="Remove member">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          </button>
+        </div>`).join('')
+    }
+
+    window.addMember = async function() {
+      const input = document.getElementById("memberName")
+      const email = input.value.trim().toLowerCase()
+      const role = document.getElementById("memberRole").value
+      if (!email) { input.focus(); return }
+      if (!email.endsWith("@maids.cc")) {
+        input.style.borderColor = "#ef4444"
+        input.style.boxShadow = "0 0 0 3px rgba(239,68,68,0.15)"
+        input.focus()
+        showToast('Only @maids.cc email addresses are allowed. Example: ahmed.hassan@maids.cc', 'warn')
+        return
+      }
+      input.style.borderColor = ""
+      input.style.boxShadow = ""
+
+      const { error } = await supabase.from("team_members").insert({ team_id: teamId, name: email, role })
+      if (error) { showToast(error.message); return }
+
+      input.value = ""
+      showToast('Member added.', 'success')
+      loadMembers()
+    }
+
+    window.removeMember = async function(id) {
+      if (!await showConfirm('This member will be removed from the team.', { title: 'Remove member?', okLabel: 'Remove' })) return
+      const { error } = await supabase.from("team_members").delete().eq("id", id)
+      if (error) { showToast(error.message); return }
+      showToast('Member removed.', 'success')
+      loadMembers()
+    }
+
+    window.deleteTeam = async function() {
+      if (!await showConfirm(`All members in "${team?.name}" will be removed permanently.`, { title: 'Delete team?' })) return
+      await supabase.from("teams").delete().eq("id", teamId)
+      location.href = "department.html?id=" + deptId
+    }
+
+    loadTeam()
+
+    window.toggleUserMenu = function() {
+      document.getElementById("userMenu").classList.toggle("show")
+    }
+    window.logout = function() {
+      localStorage.removeItem("hod")
+      location.href = "index.html"
+    }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.sb-footer') && !e.target.closest('.user-menu')) {
+        document.getElementById("userMenu")?.classList.remove("show")
+      }
+    })
+  </script>
+
+</body>
+</html>

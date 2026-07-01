@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Maids.cc HOD</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #eef0f7; display: flex; height: 100vh; overflow: hidden; color: #111827; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 228px; min-width: 228px; background: #0f1d42; display: flex; flex-direction: column; height: 100vh; }
+
+    .sb-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .sb-logo { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.2px; }
+    .sb-collapse { width: 28px; height: 28px; border-radius: 7px; background: rgba(255,255,255,0.07); border: none; color: rgba(255,255,255,0.45); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+    .sb-nav { padding: 14px 10px 0; flex: 1; }
+    .sb-label { font-size: 10px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 0 6px; margin-bottom: 6px; }
+
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; cursor: pointer; color: rgba(255,255,255,0.55); font-size: 13.5px; font-weight: 500; position: relative; margin-bottom: 1px; text-decoration: none; transition: background 0.12s, color 0.12s; }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
+    .nav-item.active { background: rgba(255,255,255,0.09); color: #fff; }
+    .nav-item.active::before { content: ''; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; background: #ee6124; border-radius: 0 2px 2px 0; }
+    .nav-item svg { flex-shrink: 0; }
+    .nav-item.active svg { opacity: 1; }
+    .nav-badge { margin-left: auto; background: rgba(255,255,255,0.13); color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+
+    .sb-footer { padding: 14px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: #25499b; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; letter-spacing: 0.5px; }
+    .avatar-name { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .avatar-role { font-size: 11px; color: rgba(255,255,255,0.38); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sb-footer { transition: background 0.12s; }
+    .sb-footer:hover { background: rgba(255,255,255,0.05); }
+    .user-menu { position: absolute; bottom: 100%; left: 0; right: 0; background: #162645; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 4px; margin-bottom: 4px; display: none; z-index: 50; box-shadow: 0 -8px 24px rgba(0,0,0,0.35); }
+    .user-menu.show { display: block; }
+    .user-menu-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 7px; color: #f87171; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.12s; }
+    .user-menu-item:hover { background: rgba(239,68,68,0.14); }
+
+    /* ── Main ── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+    .topbar { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0 28px; height: 46px; display: flex; align-items: center; font-size: 13px; color: #6b7280; flex-shrink: 0; }
+    .bc-link { color: #6b7280; text-decoration: none; }
+    .bc-link:hover { color: #25499b; }
+    .bc-sep { margin: 0 8px; color: #d1d5db; }
+    .bc-current { color: #111827; font-weight: 500; }
+
+    .content { flex: 1; overflow-y: auto; padding: 28px 32px; }
+
+    .page-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; }
+    .page-title { font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 6px; }
+    .page-meta { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6b7280; }
+    .live-dot { display: flex; align-items: center; gap: 5px; font-weight: 600; color: #059669; font-size: 13px; }
+    .live-dot::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: block; }
+    .meta-sep { color: #d1d5db; }
+
+    .btn-primary { background: #25499b; color: #fff; border: none; padding: 9px 18px; border-radius: 50px; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: background 0.15s; }
+    .btn-primary:hover { background: #1e3d87; }
+
+    /* ── Dept cards ── */
+    .dept-list { display: flex; flex-direction: column; gap: 8px; }
+    .dept-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+    .dept-card:hover { border-color: #93a8d8; box-shadow: 0 2px 10px rgba(37,73,155,0.08); }
+    .dept-icon { width: 42px; height: 42px; border-radius: 10px; background: #ede9fe; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .dept-info { flex: 1; min-width: 0; }
+    .dept-name { font-size: 14.5px; font-weight: 600; color: #111827; margin-bottom: 2px; }
+    .dept-sub { font-size: 12px; color: #9ca3af; }
+    .dept-arrow { color: #c4c9d8; font-size: 20px; line-height: 1; }
+    .dept-delete { width: 28px; height: 28px; border-radius: 7px; border: none; background: none; color: #d1d5db; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; flex-shrink: 0; }
+    .dept-delete:hover { background: #fef2f2; color: #dc2626; }
+
+    /* ── Empty state ── */
+    .empty-wrap { border: 2px dashed #d1d5db; border-radius: 16px; padding: 80px 40px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .empty-icon { width: 58px; height: 58px; border-radius: 14px; background: #ede9fe; display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
+    .empty-title { font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+    .empty-text { font-size: 13.5px; color: #6b7280; line-height: 1.65; max-width: 340px; margin-bottom: 24px; }
+    .btn-pill { background: #25499b; color: #fff; border: none; padding: 11px 22px; border-radius: 50px; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: background 0.15s; }
+    .btn-pill:hover { background: #1e3d87; }
+
+    /* ── Modal ── */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(15,29,66,0.35); backdrop-filter: blur(3px); z-index: 200; align-items: center; justify-content: center; }
+    .overlay.show { display: flex; }
+    .modal { background: #fff; border-radius: 16px; padding: 30px; width: 460px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); }
+    .modal-hd { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
+    .modal-icon { width: 42px; height: 42px; border-radius: 10px; background: #ede9fe; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .modal-title { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 3px; }
+    .modal-sub { font-size: 13px; color: #6b7280; line-height: 1.5; }
+    .form-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 7px; display: flex; align-items: center; gap: 3px; }
+    .req { color: #ef4444; }
+    .form-input { width: 100%; padding: 11px 13px; border: 1px solid #d1d5db; border-radius: 9px; font-size: 13.5px; color: #111827; outline: none; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
+    .form-input:focus { border-color: #25499b; box-shadow: 0 0 0 3px rgba(37,73,155,0.12); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+    .btn-cancel { background: #fff; border: 1px solid #d1d5db; color: #374151; padding: 9px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 500; cursor: pointer; font-family: inherit; }
+    .btn-cancel:hover { background: #f9fafb; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sb-header">
+      <span class="sb-logo">maids.cc</span>
+      <button class="sb-collapse">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+      </button>
+    </div>
+
+    <div class="sb-nav">
+      <div class="sb-label">Workspace</div>
+
+      <a class="nav-item active" href="dashboard.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.9"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Overview
+      </a>
+
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        Tickets
+        <span class="nav-badge">4</span>
+      </a>
+
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Families
+      </a>
+
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Housemaids
+      </a>
+
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Schedule
+      </a>
+
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.7"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Reports
+      </a>
+    </div>
+
+    <div style="position:relative">
+      <div class="user-menu" id="userMenu">
+        <div class="user-menu-item" onclick="logout()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Log out
+        </div>
+      </div>
+      <div class="sb-footer" onclick="toggleUserMenu()" style="cursor:pointer">
+        <div class="avatar" id="avatarEl"></div>
+        <div style="min-width:0;flex:1">
+          <div class="avatar-name" id="displayNameEl"></div>
+          <div class="avatar-role">Head of Department</div>
+        </div>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" style="flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <span class="bc-link" id="bcUser"></span>
+      <span class="bc-sep">›</span>
+      <span class="bc-current">Departments</span>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Departments</div>
+          <div class="page-meta">
+            <span class="live-dot">Live</span>
+            <span class="meta-sep">·</span>
+            <span id="metaText"></span>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="openModal()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create department
+        </button>
+      </div>
+
+      <div id="deptContent"></div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="overlay" id="overlay" onclick="overlayClick(event)">
+    <div class="modal">
+      <div class="modal-hd">
+        <div class="modal-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="1.8"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6h4"/><path d="M18 9h2a2 2 0 0 1 2 2v9h-4"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+        </div>
+        <div>
+          <div class="modal-title">Create a department</div>
+          <div class="modal-sub">Give it a name — you can build its teams and SLAs once it exists.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="form-label">Department name <span class="req">*</span></div>
+        <input class="form-input" id="deptNameInput" placeholder="e.g. Payments · Disputes" onkeydown="if(event.key==='Enter') createDept()">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" onclick="createDept()">Create department</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from "./js/supabase.js"
+    import { showToast, showConfirm } from "./js/ui.js"
+
+    let user = JSON.parse(localStorage.getItem("hod"))
+    if (!user) { location.href = "index.html"; throw 0 }
+
+    function displayName(u) {
+      return u.username.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
+    }
+    function initials(u) {
+      return u.username.split('.').map(p => p[0].toUpperCase()).join('')
+    }
+
+    document.getElementById("avatarEl").textContent = initials(user)
+    document.getElementById("displayNameEl").textContent = displayName(user)
+    document.getElementById("bcUser").textContent = displayName(user)
+
+    const deptIcon = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="1.8"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6h4"/><path d="M18 9h2a2 2 0 0 1 2 2v9h-4"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`
+
+    async function loadDepartments() {
+      const { data } = await supabase
+        .from("departments").select("*")
+        .eq("user_id", user.id).order("created_at", { ascending: true })
+
+      const count = data ? data.length : 0
+      document.getElementById("metaText").textContent =
+        `${displayName(user)} · ${count} department${count !== 1 ? 's' : ''}`
+
+      const box = document.getElementById("deptContent")
+
+      if (!data || count === 0) {
+        box.innerHTML = `
+          <div class="empty-wrap">
+            <div class="empty-icon">${deptIcon}</div>
+            <div class="empty-title">No departments yet</div>
+            <div class="empty-text">Create a department with just a name. Open it to build its teams and define the ticket types, subtypes and SLAs it works on.</div>
+            <button class="btn-pill" onclick="window.openModal()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create your first department
+            </button>
+          </div>`
+        return
+      }
+
+      box.innerHTML = `<div class="dept-list">${data.map(d => `
+        <div class="dept-card" onclick="location.href='department.html?id=${d.id}'">
+          <div class="dept-icon">${deptIcon}</div>
+          <div class="dept-info">
+            <div class="dept-name">${d.name}</div>
+            <div class="dept-sub">Click to manage teams &amp; members</div>
+          </div>
+          <div class="dept-arrow">›</div>
+          <button class="dept-delete" onclick="event.stopPropagation(); deleteDept('${d.id}','${d.name.replace(/'/g,"\\'")}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>`).join('')}</div>`
+    }
+
+    window.deleteDept = async function(id, name) {
+      if (!await showConfirm(`This will permanently remove "${name}" along with all its teams and members.`, { title: 'Delete department?' })) return
+
+      // get all teams in this department
+      const { data: teams } = await supabase.from("teams").select("id").eq("department_id", id)
+      if (teams && teams.length) {
+        const teamIds = teams.map(t => t.id)
+        // delete members first
+        await supabase.from("team_members").delete().in("team_id", teamIds)
+        // delete teams
+        await supabase.from("teams").delete().in("id", teamIds)
+      }
+
+      // delete ticket types (ticket_slas should cascade if set up, otherwise delete manually)
+      const { data: types } = await supabase.from("ticket_types").select("id").eq("department_id", id)
+      if (types && types.length) {
+        await supabase.from("ticket_slas").delete().in("ticket_type_id", types.map(t => t.id))
+        await supabase.from("ticket_types").delete().eq("department_id", id)
+      }
+
+      const { error } = await supabase.from("departments").delete().eq("id", id)
+      if (error) { showToast(error.message); return }
+      showToast('Department deleted.', 'success')
+      loadDepartments()
+    }
+
+    window.openModal = function() {
+      document.getElementById("overlay").classList.add("show")
+      setTimeout(() => document.getElementById("deptNameInput").focus(), 80)
+    }
+    window.closeModal = function() {
+      document.getElementById("overlay").classList.remove("show")
+      document.getElementById("deptNameInput").value = ""
+    }
+    window.overlayClick = function(e) {
+      if (e.target === document.getElementById("overlay")) closeModal()
+    }
+    window.createDept = async function() {
+      const name = document.getElementById("deptNameInput").value.trim()
+      if (!name) return
+      const { error } = await supabase.from("departments").insert({ name, user_id: user.id })
+      if (error) { showToast(error.message); return }
+      closeModal()
+      showToast('Department created.', 'success')
+      loadDepartments()
+    }
+
+    loadDepartments()
+
+    window.toggleUserMenu = function() {
+      document.getElementById("userMenu").classList.toggle("show")
+    }
+    window.logout = function() {
+      localStorage.removeItem("hod")
+      location.href = "index.html"
+    }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.sb-footer') && !e.target.closest('.user-menu')) {
+        document.getElementById("userMenu")?.classList.remove("show")
+      }
+    })
+  </script>
+
+</body>
+</html>
