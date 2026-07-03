@@ -289,6 +289,7 @@
 
     let team = null
     let deptId = null
+    let currentMembers = []
 
     async function loadTeam() {
       const { data, error } = await supabase.from("teams").select("*").eq("id", teamId).single()
@@ -314,7 +315,8 @@
         .from("team_members").select("*")
         .eq("team_id", teamId).order("created_at", { ascending: true })
 
-      const members = data || []
+      currentMembers = data || []
+      const members = currentMembers
       const sups = members.filter(m => m.role === "supervisor")
       const agents = members.filter(m => m.role === "agent")
 
@@ -359,6 +361,19 @@
       }
       input.style.borderColor = ""
       input.style.boxShadow = ""
+
+      // Duplicate email check
+      if (currentMembers.some(m => m.name.toLowerCase() === email)) {
+        showToast(`${email} is already a member of this team.`, 'warn')
+        input.focus()
+        return
+      }
+
+      // One supervisor max
+      if (role === 'supervisor' && currentMembers.some(m => m.role === 'supervisor')) {
+        showToast('This team already has a supervisor. A team can only have one.', 'warn')
+        return
+      }
 
       const { error } = await supabase.from("team_members").insert({ team_id: teamId, name: email, role })
       if (error) { showToast(error.message); return }
