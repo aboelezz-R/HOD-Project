@@ -105,6 +105,12 @@
     .tbl-icon-btn.danger:hover { background: #fef2f2; color: #dc2626; }
     .tbl-icon-btn.save:hover { background: #ecfdf5; color: #059669; }
     .tbl-icon-btn.save { color: #059669; }
+    .tbl-icon-btn.toggle-on { color: #10b981; }
+    .tbl-icon-btn.toggle-on:hover { background: #fef2f2; color: #dc2626; }
+    .tbl-icon-btn.toggle-off { color: #d1d5db; }
+    .tbl-icon-btn.toggle-off:hover { background: #ecfdf5; color: #10b981; }
+    .type-row.disabled td { opacity: 0.45; }
+    .type-row.disabled .type-actions button { opacity: 1; }
 
     /* Priority row */
     .priority-row > td:first-child { padding-left: 34px; display: flex; align-items: center; gap: 7px; }
@@ -516,9 +522,17 @@
           <td>
             <div class="type-actions">
               <button class="tbl-icon-btn" onclick="editTypeRow('${type.id}')" title="Edit all SLAs">${SLIDERS_SVG}</button>
-              <button class="tbl-icon-btn danger" title="Delete type" onclick="deleteType('${type.id}','${type.name.replace(/'/g,"\\'")}')"> ${TRASH_SVG}</button>
+              <button class="tbl-icon-btn ${type.is_active !== false ? 'toggle-on' : 'toggle-off'}"
+                onclick="toggleTypeActive('${type.id}', ${type.is_active !== false})"
+                title="${type.is_active !== false ? 'Disable type' : 'Enable type'}">
+                ${type.is_active !== false
+                  ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64A9 9 0 1 1 5.64 19.36"/><path d="M12 2v10"/></svg>`
+                  : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`
+                }
+              </button>
             </div>
           </td>`
+        tr.classList.toggle('disabled', type.is_active === false)
         body.appendChild(tr)
 
         // ── Priority sub-rows
@@ -602,10 +616,11 @@
       loadTicketTypes()
     }
 
-    window.deleteType = async function(id, name) {
-      if (!await showConfirm(`"${name}" and all its SLA rules will be permanently deleted.`, { title: 'Delete ticket type?' })) return
-      await supabase.from("ticket_types").delete().eq("id", id)
-      showToast('Ticket type deleted.', 'success')
+    window.toggleTypeActive = async function(id, currentlyActive) {
+      const newState = !currentlyActive
+      const { error } = await supabase.from("ticket_types").update({ is_active: newState }).eq("id", id)
+      if (error) { showToast(error.message); return }
+      showToast(newState ? 'Ticket type enabled.' : 'Ticket type disabled.', newState ? 'success' : 'info')
       loadTicketTypes()
     }
 
