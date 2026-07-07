@@ -229,6 +229,10 @@
         <div class="dept-header-info">
           <div class="dept-big-name" id="deptTitle">Loading…</div>
           <div class="dept-stats">
+            <span class="dept-stat" id="headStatWrap">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+              <span id="headStatText">No head set</span>
+            </span>
             <span class="dept-stat">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
               <span id="teamCountStat">0 teams</span>
@@ -244,6 +248,10 @@
           </div>
         </div>
         <div class="dept-header-actions">
+          <!-- Set head -->
+          <button class="icon-btn" onclick="openHeadModal()" title="Set department head">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+          </button>
           <!-- Rename -->
           <button class="icon-btn" onclick="startRename()" title="Rename department">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -337,6 +345,33 @@
     </div>
   </div>
 
+  <!-- Set Head Modal -->
+  <div class="overlay" id="headOverlay" onclick="if(event.target===this) closeHeadModal()">
+    <div class="modal">
+      <div class="modal-hd">
+        <div class="modal-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+        </div>
+        <div>
+          <div class="modal-title">Set department head</div>
+          <div class="modal-sub">Enter the name and email of the person heading this department.</div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <div class="form-label">Name <span class="req">*</span></div>
+        <input class="form-input" id="headNameInput" placeholder="e.g. Sara Ahmed" onkeydown="if(event.key==='Enter') document.getElementById('headEmailInput').focus()">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Email</div>
+        <input class="form-input" id="headEmailInput" type="email" placeholder="name@maids.cc" onkeydown="if(event.key==='Enter') saveHead()">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeHeadModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveHead()">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { supabase } from "./js/supabase.js"
     import { showToast, showConfirm } from "./js/ui.js"
@@ -424,8 +459,44 @@
       document.getElementById("deptTitle").textContent = data.name
       document.getElementById("bcDeptName").textContent = data.name
       document.getElementById("createdStat").textContent = fmtDate(data.created_at)
+      renderHeadStat(data.head_name || '')
       loadTeams()
       loadTicketTypes()
+    }
+
+    // ── Department head ──────────────────────────────────────
+    const HEAD_ICON_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>`
+
+    function renderHeadStat(name) {
+      const wrap = document.getElementById("headStatWrap")
+      wrap.innerHTML = `${HEAD_ICON_SVG}<span id="headStatText">${name ? 'Head: ' + name : 'No head set'}</span>`
+    }
+
+    window.openHeadModal = function() {
+      document.getElementById("headNameInput").value = dept.head_name || ''
+      document.getElementById("headEmailInput").value = dept.head_email || ''
+      document.getElementById("headOverlay").classList.add("show")
+      setTimeout(() => document.getElementById("headNameInput").focus(), 80)
+    }
+    window.closeHeadModal = function() {
+      document.getElementById("headOverlay").classList.remove("show")
+    }
+    window.saveHead = async function() {
+      const name = document.getElementById("headNameInput").value.trim()
+      const email = document.getElementById("headEmailInput").value.trim().toLowerCase()
+      if (!name) { showToast('Enter the head\'s name.', 'warn'); document.getElementById("headNameInput").focus(); return }
+      if (email && !email.endsWith('@maids.cc')) {
+        showToast('Only @maids.cc email addresses are allowed.', 'warn')
+        document.getElementById("headEmailInput").focus()
+        return
+      }
+      const { error } = await supabase.from("departments").update({ head_name: name, head_email: email || null }).eq("id", deptId)
+      if (error) { showToast(error.message); return }
+      dept.head_name = name
+      dept.head_email = email
+      renderHeadStat(name)
+      closeHeadModal()
+      showToast('Department head set.', 'success')
     }
 
     // ── Teams ────────────────────────────────────────────────

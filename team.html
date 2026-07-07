@@ -369,12 +369,6 @@
         return
       }
 
-      // One supervisor max
-      if (role === 'supervisor' && currentMembers.some(m => m.role === 'supervisor')) {
-        showToast('This team already has a supervisor. A team can only have one.', 'warn')
-        return
-      }
-
       const { error } = await supabase.from("team_members").insert({ team_id: teamId, name: email, role })
       if (error) { showToast(error.message); return }
 

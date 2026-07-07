@@ -77,6 +77,9 @@
     .dept-arrow { color: #c4c9d8; font-size: 20px; line-height: 1; }
     .dept-delete { width: 28px; height: 28px; border-radius: 7px; border: none; background: none; color: #d1d5db; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; flex-shrink: 0; }
     .dept-delete:hover { background: #fef2f2; color: #dc2626; }
+    .dept-head-btn { display: flex; align-items: center; gap: 6px; border: 1px solid #e5e7eb; background: #fff; color: #6d28d9; padding: 6px 12px; border-radius: 50px; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.12s, border-color 0.12s; }
+    .dept-head-btn:hover { background: #f5f3ff; border-color: #ddd6fe; }
+    .dept-head-btn.set { color: #374151; }
 
     /* ── Empty state ── */
     .empty-wrap { border: 2px dashed #d1d5db; border-radius: 16px; padding: 80px 40px; display: flex; flex-direction: column; align-items: center; text-align: center; }
@@ -220,6 +223,36 @@
     </div>
   </div>
 
+  <!-- Set head modal -->
+  <div class="overlay" id="headOverlay" onclick="if(event.target===this) closeHeadModal()">
+    <div class="modal">
+      <div class="modal-hd">
+        <div class="modal-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+        </div>
+        <div>
+          <div class="modal-title">Set department head</div>
+          <div class="modal-sub">Enter the name and email of the person heading this department.</div>
+        </div>
+      </div>
+
+      <input type="hidden" id="headDeptId">
+      <div style="margin-bottom:14px">
+        <div class="form-label">Name <span class="req">*</span></div>
+        <input class="form-input" id="headNameInput" placeholder="e.g. Sara Ahmed" onkeydown="if(event.key==='Enter') document.getElementById('headEmailInput').focus()">
+      </div>
+      <div>
+        <div class="form-label">Email</div>
+        <input class="form-input" id="headEmailInput" type="email" placeholder="name@maids.cc" onkeydown="if(event.key==='Enter') saveHead()">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeHeadModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveHead()">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { supabase } from "./js/supabase.js"
     import { showToast, showConfirm } from "./js/ui.js"
@@ -270,8 +303,12 @@
           <div class="dept-icon">${deptIcon}</div>
           <div class="dept-info">
             <div class="dept-name">${d.name}</div>
-            <div class="dept-sub">Click to manage teams &amp; members</div>
+            <div class="dept-sub">${d.head_name ? 'Head: ' + d.head_name : 'Click to manage teams &amp; members'}</div>
           </div>
+          <button class="dept-head-btn ${d.head_name ? 'set' : ''}" onclick="event.stopPropagation(); window.openHeadModal('${d.id}','${(d.head_name||'').replace(/'/g,"\\'")}','${(d.head_email||'').replace(/'/g,"\\'")}')" title="${d.head_name ? 'Edit department head' : 'Set department head'}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+            ${d.head_name ? 'Head' : 'Set head'}
+          </button>
           <div class="dept-arrow">›</div>
           <button class="dept-delete" onclick="event.stopPropagation(); deleteDept('${d.id}','${d.name.replace(/'/g,"\\'")}')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -315,6 +352,33 @@
     }
     window.overlayClick = function(e) {
       if (e.target === document.getElementById("overlay")) closeModal()
+    }
+
+    window.openHeadModal = function(id, name, email) {
+      document.getElementById("headDeptId").value = id
+      document.getElementById("headNameInput").value = name || ""
+      document.getElementById("headEmailInput").value = email || ""
+      document.getElementById("headOverlay").classList.add("show")
+      setTimeout(() => document.getElementById("headNameInput").focus(), 80)
+    }
+    window.closeHeadModal = function() {
+      document.getElementById("headOverlay").classList.remove("show")
+    }
+    window.saveHead = async function() {
+      const id = document.getElementById("headDeptId").value
+      const name = document.getElementById("headNameInput").value.trim()
+      const email = document.getElementById("headEmailInput").value.trim().toLowerCase()
+      if (!name) { showToast('Enter the head\'s name.', 'warn'); document.getElementById("headNameInput").focus(); return }
+      if (email && !email.endsWith('@maids.cc')) {
+        showToast('Only @maids.cc email addresses are allowed.', 'warn')
+        document.getElementById("headEmailInput").focus()
+        return
+      }
+      const { error } = await supabase.from("departments").update({ head_name: name, head_email: email || null }).eq("id", id)
+      if (error) { showToast(error.message); return }
+      closeHeadModal()
+      showToast('Department head set.', 'success')
+      loadDepartments()
     }
     window.createDept = async function() {
       const name = document.getElementById("deptNameInput").value.trim()
