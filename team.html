@@ -404,8 +404,9 @@
     window.toggleUserMenu = function() {
       document.getElementById("userMenu").classList.toggle("show")
     }
-    window.logout = function() {
+    window.logout = async function() {
       localStorage.removeItem("hod")
+      await supabase.auth.signOut()
       location.href = "index.html"
     }
     document.addEventListener('click', function(e) {

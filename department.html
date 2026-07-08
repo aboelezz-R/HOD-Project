@@ -124,8 +124,11 @@
     .add-type-row { display: none; }
     .add-type-row td { background: #f0f4ff; padding: 10px 12px; }
     .add-type-inner { display: flex; align-items: center; gap: 8px; }
-    .add-type-input { flex: 1; border: none; background: transparent; font-size: 13.5px; color: #111827; outline: none; font-family: inherit; }
+    .add-type-input { flex: 1; min-width: 140px; border: none; background: transparent; font-size: 13.5px; color: #111827; outline: none; font-family: inherit; }
     .add-type-hint { font-size: 11.5px; color: #9ca3af; white-space: nowrap; }
+    .priority-picker { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .priority-check { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: #374151; cursor: pointer; user-select: none; }
+    .priority-check input { cursor: pointer; }
 
     /* SLA empty */
     .sla-empty { padding: 36px 20px; text-align: center; color: #9ca3af; font-size: 13px; line-height: 1.6; display: none; flex-direction: column; align-items: center; gap: 6px; }
@@ -405,14 +408,14 @@
       return h + 'h ' + m + 'm'
     }
 
-    // If all 4 priorities share the same value for a column → return that value, else null (show —)
+    // If all active priorities share the same value for a column → return that value, else null (show —)
     function typeSummary(slaByPriority) {
-      const keys = ['low','medium','high','urgent']
+      const keys = Object.keys(slaByPriority)
       const cols = ['assign_min','resolve_min','max_hold_min','next_update_min']
       const result = {}
       for (const col of cols) {
         const vals = keys.map(k => slaByPriority[k]?.[col]).filter(v => v != null)
-        result[col] = (vals.length === 4 && vals.every(v => v === vals[0])) ? vals[0] : null
+        result[col] = (vals.length > 0 && vals.every(v => v === vals[0])) ? vals[0] : null
       }
       return result
     }
@@ -606,8 +609,8 @@
         tr.classList.toggle('disabled', type.is_active === false)
         body.appendChild(tr)
 
-        // ── Priority sub-rows
-        PRIORITIES.forEach(p => {
+        // ── Priority sub-rows (only priorities enabled for this type)
+        PRIORITIES.filter(p => typeSlas[p.key]).forEach(p => {
           const sla = typeSlas[p.key]
           const row = document.createElement('tr')
           row.className = 'priority-row'
@@ -615,12 +618,12 @@
           row.style.display = isExpanded ? 'table-row' : 'none'
           row.innerHTML = `
             <td>${priorityIcon(p)}<span class="priority-label" style="color:${p.color}">${p.label}</span></td>
-            <td>${sla ? fmtDur(sla.assign_min) : '30m'}</td>
-            <td>${sla ? fmtDur(sla.resolve_min) : '8h'}</td>
-            <td>${sla ? fmtDur(sla.max_hold_min) : '4h'}</td>
-            <td>${sla ? fmtDur(sla.next_update_min) : '2h'}</td>
+            <td>${fmtDur(sla.assign_min)}</td>
+            <td>${fmtDur(sla.resolve_min)}</td>
+            <td>${fmtDur(sla.max_hold_min)}</td>
+            <td>${fmtDur(sla.next_update_min)}</td>
             <td>
-              <button class="tbl-icon-btn" onclick="editPriorityRow('${sla?.id}','${type.id}','${p.key}')" title="Edit SLA">${SLIDERS_SVG}</button>
+              <button class="tbl-icon-btn" onclick="editPriorityRow('${sla.id}','${type.id}','${p.key}')" title="Edit SLA">${SLIDERS_SVG}</button>
             </td>`
           body.appendChild(row)
         })
@@ -630,15 +633,29 @@
       const addTr = document.createElement('tr')
       addTr.className = 'add-type-row'
       addTr.id = 'addTypeRow'
-      addTr.innerHTML = `
+      addTr.innerHTML = addTypeRowInnerHtml()
+      body.appendChild(addTr)
+    }
+
+    function priorityPickerHtml() {
+      return `<div class="priority-picker" id="newTypePriorities">${PRIORITIES.map(p => `
+        <label class="priority-check">
+          <input type="checkbox" value="${p.key}" checked>
+          <span style="color:${p.color}">${p.label}</span>
+        </label>`).join('')}</div>`
+    }
+
+    function addTypeRowInnerHtml() {
+      return `
         <td colspan="6">
           <div class="add-type-inner">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             <input class="add-type-input" id="newTypeInput" placeholder="New type name…" onkeydown="handleTypeKey(event)">
+            ${priorityPickerHtml()}
+            <button class="tbl-icon-btn save" onclick="confirmAddType()" title="Add type">${CHECK_SVG}</button>
             <span class="add-type-hint">↵ to add</span>
           </div>
         </td>`
-      body.appendChild(addTr)
     }
 
     window.toggleType = function(id) {
@@ -656,12 +673,7 @@
         const addTr = document.createElement('tr')
         addTr.className = 'add-type-row'
         addTr.id = 'addTypeRow'
-        addTr.innerHTML = `
-          <td colspan="6"><div class="add-type-inner">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            <input class="add-type-input" id="newTypeInput" placeholder="New type name…" onkeydown="handleTypeKey(event)">
-            <span class="add-type-hint">↵ to add</span>
-          </div></td>`
+        addTr.innerHTML = addTypeRowInnerHtml()
         body.appendChild(addTr)
         addRow = addTr
       }
@@ -669,18 +681,28 @@
       setTimeout(() => document.getElementById("newTypeInput")?.focus(), 60)
     }
 
-    window.handleTypeKey = async function(e) {
+    window.handleTypeKey = function(e) {
       if (e.key === 'Escape') { e.target.closest('.add-type-row').style.display = 'none'; return }
-      if (e.key !== 'Enter') return
-      const name = e.target.value.trim()
-      if (!name) return
-      e.target.disabled = true
+      if (e.key === 'Enter') confirmAddType()
+    }
+
+    window.confirmAddType = async function() {
+      const nameInput = document.getElementById("newTypeInput")
+      const name = nameInput.value.trim()
+      if (!name) { nameInput.focus(); return }
+
+      const checkedBoxes = document.querySelectorAll('#newTypePriorities input[type="checkbox"]:checked')
+      const selectedKeys = Array.from(checkedBoxes).map(cb => cb.value)
+      if (selectedKeys.length === 0) { showToast('Select at least one priority.', 'warn'); return }
+
+      nameInput.disabled = true
 
       const { data: newType, error } = await supabase.from("ticket_types").insert({ name, department_id: deptId }).select().single()
-      if (error) { showToast(error.message); e.target.disabled = false; return }
+      if (error) { showToast(error.message); nameInput.disabled = false; return }
 
       await supabase.from("ticket_slas").insert(
-        PRIORITIES.map(p => ({ ticket_type_id: newType.id, priority: p.key, assign_min:30, resolve_min:480, max_hold_min:240, next_update_min:120 }))
+        PRIORITIES.filter(p => selectedKeys.includes(p.key))
+          .map(p => ({ ticket_type_id: newType.id, priority: p.key, assign_min:30, resolve_min:480, max_hold_min:240, next_update_min:120 }))
       )
 
       expandedTypes.add(newType.id)
@@ -846,8 +868,9 @@
     window.toggleUserMenu = function() {
       document.getElementById("userMenu").classList.toggle("show")
     }
-    window.logout = function() {
+    window.logout = async function() {
       localStorage.removeItem("hod")
+      await supabase.auth.signOut()
       location.href = "index.html"
     }
     document.addEventListener('click', function(e) {
