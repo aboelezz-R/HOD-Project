@@ -260,25 +260,16 @@
 
             const username = email.split("@")[0]
 
-            let { data: profile, error } = await supabase
+            const { data: profile, error } = await supabase
                 .from("profiles")
                 .select("*")
                 .eq("username", username)
                 .single()
 
             if (error || !profile) {
-                const { data: created, error: createError } = await supabase
-                    .from("profiles")
-                    .insert({ username, password: crypto.randomUUID() })
-                    .select()
-                    .single()
-
-                if (createError) {
-                    showToast(createError.message)
-                    await supabase.auth.signOut()
-                    return
-                }
-                profile = created
+                showToast("This account isn't authorized. Ask an admin to add you.")
+                await supabase.auth.signOut()
+                return
             }
 
             localStorage.setItem("hod", JSON.stringify(profile))
