@@ -377,16 +377,27 @@
       if (!str) return 0
       str = str.trim().toLowerCase().replace(/\s+/g,'')
       let t = 0
+      const d = str.match(/(\d+)d/); if (d) t += parseInt(d[1]) * 1440
       const h = str.match(/(\d+)h/); if (h) t += parseInt(h[1]) * 60
       const m = str.match(/(\d+)m/); if (m) t += parseInt(m[1])
       return t || parseInt(str) || 0
     }
     function fmtDur(mins) {
       if (!mins && mins !== 0) return '–'
-      const h = Math.floor(mins / 60), m = mins % 60
-      if (h === 0) return m + 'm'
-      if (m === 0) return h + 'h'
-      return h + 'h ' + m + 'm'
+      // Under 24h → just hours/minutes; 24h or more → break out days
+      if (mins < 1440) {
+        const h = Math.floor(mins / 60), m = mins % 60
+        if (h === 0) return m + 'm'
+        if (m === 0) return h + 'h'
+        return h + 'h ' + m + 'm'
+      }
+      const days = Math.floor(mins / 1440)
+      const h = Math.floor((mins % 1440) / 60)
+      const m = mins % 60
+      const parts = [days + 'd']
+      if (h) parts.push(h + 'h')
+      if (m) parts.push(m + 'm')
+      return parts.join(' ')
     }
 
     // If all active priorities share the same value for a column → return that value, else null (show —)
