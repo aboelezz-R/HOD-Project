@@ -237,8 +237,15 @@
     let user = JSON.parse(localStorage.getItem("hod"))
     if (!user) { location.href = "index.html"; throw 0 }
 
+    // Admin accounts see every department across all HODs (current and future)
+    const ADMIN_USERS = ['adam.nizar']
+    const isAdmin = ADMIN_USERS.includes(user.username)
+
     function displayName(u) {
       return u.username.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
+    }
+    function usernameToName(username) {
+      return username.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
     }
     function initials(u) {
       return u.username.split('.').map(p => p[0].toUpperCase()).join('')
@@ -251,13 +258,23 @@
     const deptIcon = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="1.8"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6h4"/><path d="M18 9h2a2 2 0 0 1 2 2v9h-4"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`
 
     async function loadDepartments() {
-      const { data } = await supabase
-        .from("departments").select("*")
-        .eq("user_id", user.id).order("created_at", { ascending: true })
+      let query = supabase.from("departments").select("*").order("created_at", { ascending: true })
+      // Non-admins see only their own departments; admins see all
+      if (!isAdmin) query = query.eq("user_id", user.id)
+      const { data } = await query
+
+      // For admins, map each department's owner id → username so we can label the cards
+      const ownerNames = {}
+      if (isAdmin && data && data.length) {
+        const ownerIds = [...new Set(data.map(d => d.user_id).filter(Boolean))]
+        const { data: owners } = await supabase.from("profiles").select("id,username").in("id", ownerIds)
+        ;(owners || []).forEach(o => { ownerNames[o.id] = usernameToName(o.username) })
+      }
 
       const count = data ? data.length : 0
-      document.getElementById("metaText").textContent =
-        `${displayName(user)} · ${count} department${count !== 1 ? 's' : ''}`
+      document.getElementById("metaText").textContent = isAdmin
+        ? `${displayName(user)} · Admin · ${count} department${count !== 1 ? 's' : ''} (all HODs)`
+        : `${displayName(user)} · ${count} department${count !== 1 ? 's' : ''}`
 
       const box = document.getElementById("deptContent")
 
@@ -275,12 +292,17 @@
         return
       }
 
-      box.innerHTML = `<div class="dept-list">${data.map(d => `
+      box.innerHTML = `<div class="dept-list">${data.map(d => {
+        const ownerLabel = isAdmin ? (ownerNames[d.user_id] || 'Unknown') : null
+        const subText = isAdmin
+          ? `${ownerLabel}${d.head_name ? ' · Head: ' + d.head_name : ''}`
+          : (d.head_name ? 'Head: ' + d.head_name : 'Click to manage teams &amp; members')
+        return `
         <div class="dept-card" onclick="location.href='department.html?id=${d.id}'">
           <div class="dept-icon">${deptIcon}</div>
           <div class="dept-info">
             <div class="dept-name">${d.name}</div>
-            <div class="dept-sub">${d.head_name ? 'Head: ' + d.head_name : 'Click to manage teams &amp; members'}</div>
+            <div class="dept-sub">${subText}</div>
           </div>
           <button class="dept-head-btn ${d.head_name ? 'set' : ''}" onclick="event.stopPropagation(); window.openHeadModal('${d.id}','${(d.head_name||'').replace(/'/g,"\\'")}','${(d.head_email||'').replace(/'/g,"\\'")}')" title="${d.head_name ? 'Edit department head' : 'Set department head'}">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
@@ -290,7 +312,8 @@
           <button class="dept-delete" onclick="event.stopPropagation(); deleteDept('${d.id}','${d.name.replace(/'/g,"\\'")}')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
           </button>
-        </div>`).join('')}</div>`
+        </div>`
+      }).join('')}</div>`
     }
 
     window.deleteDept = async function(id, name) {
