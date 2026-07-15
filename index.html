@@ -239,36 +239,46 @@
 
 
         window.loginWithGoogle = async function () {
-            await supabase.auth.signInWithOAuth({
+            const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: { redirectTo: window.location.origin + window.location.pathname }
             })
+            if (error) showToast(error.message)
         }
 
-        // If we just came back from Google, finish the login
-        async function handleGoogleRedirect() {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (!session) return
+        // Finish login once a Google session is actually established.
+        // We react to onAuthStateChange (not a one-shot getSession) because
+        // Supabase exchanges the OAuth ?code= for a session asynchronously —
+        // checking too early would find no session and silently do nothing.
+        let loginHandled = false
+        async function finishLogin(session) {
+            if (loginHandled || !session) return
+            loginHandled = true
 
             const email = (session.user.email || "").toLowerCase()
 
             if (!email.endsWith("@maids.cc")) {
                 showToast("Only @maids.cc Google accounts are allowed.")
                 await supabase.auth.signOut()
+                loginHandled = false
                 return
             }
 
             const username = email.split("@")[0]
 
-            const { data: profile, error } = await supabase
+            // Use limit(1) instead of single() so a duplicate profile row
+            // doesn't error out and wrongly block a real user.
+            const { data: rows, error } = await supabase
                 .from("profiles")
                 .select("*")
                 .eq("username", username)
-                .single()
+                .limit(1)
 
+            const profile = rows && rows[0]
             if (error || !profile) {
                 showToast("This account isn't authorized. Ask an admin to add you.")
                 await supabase.auth.signOut()
+                loginHandled = false
                 return
             }
 
@@ -276,7 +286,9 @@
             window.location.href = "dashboard.html"
         }
 
-        handleGoogleRedirect()
+        supabase.auth.onAuthStateChange((_event, session) => {
+            if (session) finishLogin(session)
+        })
 
     </script>
 
