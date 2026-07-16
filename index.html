@@ -257,21 +257,14 @@
 
             const email = (session.user.email || "").toLowerCase()
 
-            if (!email.endsWith("@maids.cc")) {
-                showToast("Only @maids.cc Google accounts are allowed.")
-                await supabase.auth.signOut()
-                loginHandled = false
-                return
-            }
-
-            const username = email.split("@")[0]
-
-            // Use limit(1) instead of single() so a duplicate profile row
-            // doesn't error out and wrongly block a real user.
+            // Allowlist is matched on the FULL email address (any Google
+            // domain is allowed, but only emails present in profiles.email).
+            // Matching on the local part alone would let e.g. simon@gmail.com
+            // impersonate the maids.cc "simon" profile.
             const { data: rows, error } = await supabase
                 .from("profiles")
                 .select("*")
-                .eq("username", username)
+                .eq("email", email)
                 .limit(1)
 
             const profile = rows && rows[0]
