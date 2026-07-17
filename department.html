@@ -487,7 +487,9 @@
       "mv_to_mv_sale_follow_up",
     ]
     function normTypeName(n) {
-      return (n || '').toLowerCase().replace(/__c/g, '').replace(/[^a-z0-9]/g, '')
+      // strip a trailing Salesforce "__c" suffix only (a global replace would
+      // corrupt names like "...__calculated_VAT"), then keep alphanumerics
+      return (n || '').toLowerCase().replace(/__c$/, '').replace(/[^a-z0-9]/g, '')
     }
     const ALWAYS_ENABLED_SET = new Set(ALWAYS_ENABLED_TYPES.map(normTypeName))
     function isAlwaysEnabled(name) { return ALWAYS_ENABLED_SET.has(normTypeName(name)) }
