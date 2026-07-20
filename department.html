@@ -706,7 +706,10 @@
             <td>${fmtDur(sla.max_hold_min)}</td>
             <td>${fmtDur(sla.next_update_min)}</td>
             <td>
-              <button class="tbl-icon-btn" onclick="editPriorityRow('${sla.id}','${type.id}','${p.key}')" title="Edit SLA">${SLIDERS_SVG}</button>
+              <div class="type-actions">
+                <button class="tbl-icon-btn" onclick="editPriorityRow('${sla.id}','${type.id}','${p.key}')" title="Edit SLA">${SLIDERS_SVG}</button>
+                <button class="tbl-icon-btn danger" onclick="deletePriorityRow('${sla.id}','${p.label}','${type.name.replace(/'/g,"\\'")}')" title="Delete this priority">${TRASH_SVG}</button>
+              </div>
             </td>`
           body.appendChild(row)
         })
@@ -902,6 +905,15 @@
       const { error } = await supabase.from("ticket_slas").update({ assign_min, resolve_min, max_hold_min, next_update_min }).eq("id", slaId)
       if (error) { showToast(error.message); return }
       showToast('SLA saved.', 'success')
+      loadTicketTypes()
+    }
+
+    // ── Delete a single priority (SLA row) from a type ──
+    window.deletePriorityRow = async function(slaId, priorityLabel, typeName) {
+      if (!await showConfirm(`The "${priorityLabel}" priority will be removed from "${typeName}".`, { title: 'Delete priority?', okLabel: 'Delete' })) return
+      const { error } = await supabase.from("ticket_slas").delete().eq("id", slaId)
+      if (error) { showToast(error.message); return }
+      showToast('Priority deleted.', 'success')
       loadTicketTypes()
     }
 
