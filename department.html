@@ -68,7 +68,7 @@
     .icon-btn.danger:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
 
     /* Panels */
-    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .panels { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(0, 2.2fr); gap: 14px; }
     .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
     .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #f3f4f6; flex-shrink: 0; }
     .panel-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #111827; }
@@ -93,6 +93,8 @@
     .sla-table thead th:first-child { width: 36%; }
     .sla-table thead th:last-child { width: 60px; }
     .sla-table tbody td { font-size: 13px; color: #374151; padding: 9px 12px; border-bottom: 1px solid #f9fafb; vertical-align: middle; white-space: nowrap; }
+    /* let the first column (type / priority name) wrap so long names don't force horizontal scroll */
+    .sla-table tbody td:first-child { white-space: normal; word-break: break-word; }
     .sla-table tbody tr:last-child td { border-bottom: none; }
 
     /* Type row */
@@ -100,7 +102,7 @@
     .chevron-btn { background: none; border: none; cursor: pointer; color: #9ca3af; display: flex; align-items: center; padding: 2px; transition: transform 0.18s; flex-shrink: 0; }
     .chevron-btn.open { transform: rotate(0deg); }
     .chevron-btn.closed { transform: rotate(-90deg); }
-    .type-name-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .type-name-text { flex: 1; min-width: 0; white-space: normal; word-break: break-word; }
     .type-actions { display: flex; align-items: center; gap: 3px; }
     .tbl-icon-btn { width: 24px; height: 24px; border-radius: 5px; border: none; background: none; color: #9ca3af; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
     .tbl-icon-btn:hover { background: #f3f4f6; color: #374151; }
@@ -129,6 +131,11 @@
     .add-type-input { flex: 1; min-width: 140px; border: none; background: transparent; font-size: 13.5px; color: #111827; outline: none; font-family: inherit; }
     .add-type-hint { font-size: 11.5px; color: #9ca3af; white-space: nowrap; }
     .priority-picker { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    /* Add-priority row (shown under a type's priorities when some are missing) */
+    .add-prio-row td { padding-left: 34px !important; }
+    .add-prio-inner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: #6b7280; }
+    .add-prio-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px dashed #c4c9d8; background: #fff; border-radius: 50px; padding: 3px 11px; font-size: 12px; font-weight: 600; cursor: pointer; color: #374151; transition: background 0.12s, border-color 0.12s; }
+    .add-prio-chip:hover { background: #f0f4ff; border-color: #25499b; color: #25499b; }
     .priority-check { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: #374151; cursor: pointer; user-select: none; }
     .priority-check input { cursor: pointer; }
 
@@ -713,6 +720,26 @@
             </td>`
           body.appendChild(row)
         })
+
+        // ── Add-priority row: chips for any priorities this type doesn't have yet
+        const missingPriorities = PRIORITIES.filter(p => !typeSlas[p.key])
+        if (missingPriorities.length) {
+          const addRow = document.createElement('tr')
+          addRow.className = 'priority-row add-prio-row'
+          addRow.id = `add-prio-row-${type.id}`
+          addRow.style.display = isExpanded ? 'table-row' : 'none'
+          addRow.innerHTML = `
+            <td colspan="6">
+              <div class="add-prio-inner">
+                <span>Add priority:</span>
+                ${missingPriorities.map(p => `
+                  <button class="add-prio-chip" onclick="addPriorityToType('${type.id}','${p.key}')">
+                    ${priorityIcon(p)}<span style="color:${p.color}">${p.label}</span>
+                  </button>`).join('')}
+              </div>
+            </td>`
+          body.appendChild(addRow)
+        }
       })
 
       // Inline add row (always at end, hidden by default)
@@ -905,6 +932,18 @@
       const { error } = await supabase.from("ticket_slas").update({ assign_min, resolve_min, max_hold_min, next_update_min }).eq("id", slaId)
       if (error) { showToast(error.message); return }
       showToast('SLA saved.', 'success')
+      loadTicketTypes()
+    }
+
+    // ── Add a single priority (SLA row) to an existing type ──
+    window.addPriorityToType = async function(typeId, priorityKey) {
+      expandedTypes.add(typeId)
+      const { error } = await supabase.from("ticket_slas").insert({
+        ticket_type_id: typeId, priority: priorityKey,
+        assign_min:30, resolve_min:480, max_hold_min:240, next_update_min:120
+      })
+      if (error) { showToast(error.message); return }
+      showToast('Priority added.', 'success')
       loadTicketTypes()
     }
 
