@@ -95,6 +95,7 @@
     .member-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
     .avatar-sup { background: #ede9fe; color: #6d28d9; }
     .avatar-agent { background: #fff7ed; color: #c2410c; }
+    .avatar-joker { background: #dcfce7; color: #15803d; }
     .member-name { font-size: 13.5px; font-weight: 500; color: #111827; }
     .remove-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid transparent; background: none; color: #d1d5db; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
     .remove-btn:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
@@ -234,6 +235,19 @@
           </div>
         </div>
 
+        <div class="panel" id="jokerPanel" style="display:none">
+          <div class="panel-head">
+            <div class="panel-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2"><path d="M12 2a5 5 0 0 0-5 5c0 2 1 3 1 5h8c0-2 1-3 1-5a5 5 0 0 0-5-5Z"/><path d="M8 17h8"/><path d="M9 21h6"/></svg>
+              Jokers
+              <span class="panel-badge" id="jokerCount">0</span>
+            </div>
+          </div>
+          <div class="panel-body" id="jokerBody">
+            <div class="panel-empty">No jokers yet</div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -271,6 +285,10 @@
     let team = null
     let deptId = null
     let currentMembers = []
+    let jokerEnabled = false
+
+    // Accounts whose departments get the extra "Joker" role
+    const JOKER_OWNERS = ['manaleham']
 
     async function loadTeam() {
       const { data, error } = await supabase.from("teams").select("*").eq("id", teamId).single()
@@ -284,9 +302,26 @@
       document.getElementById("backBtn").href = "department.html?id=" + deptId
       document.getElementById("bcDept").href = "department.html?id=" + deptId
 
-      // Set dept name in breadcrumb
-      const { data: dept } = await supabase.from("departments").select("name").eq("id", deptId).single()
-      if (dept) document.getElementById("bcDept").textContent = dept.name
+      // Set dept name in breadcrumb + determine whether the owning account allows Jokers
+      const { data: dept } = await supabase.from("departments").select("name, profiles(username)").eq("id", deptId).single()
+      if (dept) {
+        document.getElementById("bcDept").textContent = dept.name
+        const owner = dept.profiles?.username
+        jokerEnabled = JOKER_OWNERS.includes(owner)
+      }
+
+      if (jokerEnabled) {
+        // add the Joker option to the role dropdown
+        const sel = document.getElementById("memberRole")
+        if (!sel.querySelector('option[value="joker"]')) {
+          const opt = document.createElement('option')
+          opt.value = "joker"; opt.textContent = "Joker"
+          sel.appendChild(opt)
+        }
+        // show the Jokers panel and give the three panels equal thirds
+        document.getElementById("jokerPanel").style.display = ""
+        document.querySelector(".members-panels").style.gridTemplateColumns = "1fr 1fr 1fr"
+      }
 
       loadMembers()
     }
@@ -300,6 +335,7 @@
       const members = currentMembers
       const sups = members.filter(m => m.role === "supervisor")
       const agents = members.filter(m => m.role === "agent")
+      const jokers = members.filter(m => m.role === "joker")
 
       document.getElementById("memberCountStat").textContent = members.length + " member" + (members.length !== 1 ? "s" : "")
       document.getElementById("supCount").textContent = sups.length
@@ -307,15 +343,21 @@
 
       renderGroup("supBody", sups, "supervisor")
       renderGroup("agentBody", agents, "agent")
+
+      if (jokerEnabled) {
+        document.getElementById("jokerCount").textContent = jokers.length
+        renderGroup("jokerBody", jokers, "joker")
+      }
     }
 
+    const AVATAR_CLASS = { supervisor: "avatar-sup", agent: "avatar-agent", joker: "avatar-joker" }
     function renderGroup(containerId, members, role) {
       const box = document.getElementById(containerId)
       if (members.length === 0) {
         box.innerHTML = `<div class="panel-empty">No ${role}s yet</div>`
         return
       }
-      const avatarClass = role === "supervisor" ? "avatar-sup" : "avatar-agent"
+      const avatarClass = AVATAR_CLASS[role] || "avatar-agent"
       box.innerHTML = members.map(m => `
         <div class="member-row" id="row-${m.id}">
           <div class="member-left">
@@ -332,6 +374,7 @@
       const input = document.getElementById("memberName")
       const email = input.value.trim().toLowerCase()
       const role = document.getElementById("memberRole").value
+      if (role === "joker" && !jokerEnabled) { showToast("The Joker role isn't available for this department.", 'warn'); return }
       if (!email) { input.focus(); return }
       if (!email.endsWith("@maids.cc")) {
         input.style.borderColor = "#ef4444"
