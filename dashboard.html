@@ -257,10 +257,14 @@
 
     const deptIcon = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="1.8"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6h4"/><path d="M18 9h2a2 2 0 0 1 2 2v9h-4"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`
 
+    // Email of the logged-in user (used to match departments they head)
+    const userEmail = (user.email || (user.username + "@maids.cc")).toLowerCase()
+
     async function loadDepartments() {
       let query = supabase.from("departments").select("*").order("created_at", { ascending: true })
-      // Non-admins see only their own departments; admins see all
-      if (!isAdmin) query = query.eq("user_id", user.id)
+      // Non-admins see departments they OWN or are listed as a HEAD of (head_email
+      // may hold a comma-separated list of head emails). Admins see all.
+      if (!isAdmin) query = query.or(`user_id.eq.${user.id},head_email.ilike.*${userEmail}*`)
       const { data } = await query
 
       // For admins, map each department's owner id → username so we can label the cards
