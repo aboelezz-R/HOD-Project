@@ -171,6 +171,12 @@
         </button>
       </div>
 
+      <div id="deptSearchWrap" style="display:none; margin-bottom:16px; position:relative;">
+        <svg style="position:absolute; left:14px; top:50%; transform:translateY(-50%); pointer-events:none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="deptSearch" placeholder="Search departments by name, owner, or head…" oninput="filterDepts()"
+          style="width:100%; padding:11px 14px 11px 40px; border:1px solid #d1d5db; border-radius:10px; font-size:14px; outline:none; font-family:inherit;">
+      </div>
+
       <div id="deptContent"></div>
     </div>
   </div>
@@ -260,6 +266,10 @@
     // Email of the logged-in user (used to match departments they head)
     const userEmail = (user.email || (user.username + "@maids.cc")).toLowerCase()
 
+    // State for client-side search (admin)
+    let allDepts = []
+    let ownerNamesMap = {}
+
     async function loadDepartments() {
       let query = supabase.from("departments").select("*").order("created_at", { ascending: true })
       // Non-admins see departments they OWN or are listed as a HEAD of (head_email
@@ -280,10 +290,15 @@
         ? `${displayName(user)} · Admin · ${count} department${count !== 1 ? 's' : ''} (all HODs)`
         : `${displayName(user)} · ${count} department${count !== 1 ? 's' : ''}`
 
-      const box = document.getElementById("deptContent")
+      // keep loaded data for client-side search
+      allDepts = data || []
+      ownerNamesMap = ownerNames
+
+      // Show the search bar only for admin (and only when there are departments)
+      document.getElementById("deptSearchWrap").style.display = (isAdmin && count > 0) ? "block" : "none"
 
       if (!data || count === 0) {
-        box.innerHTML = `
+        document.getElementById("deptContent").innerHTML = `
           <div class="empty-wrap">
             <div class="empty-icon">${deptIcon}</div>
             <div class="empty-title">No departments yet</div>
@@ -296,8 +311,17 @@
         return
       }
 
-      box.innerHTML = `<div class="dept-list">${data.map(d => {
-        const ownerLabel = isAdmin ? (ownerNames[d.user_id] || 'Unknown') : null
+      renderDeptCards(allDepts)
+    }
+
+    function renderDeptCards(list) {
+      const box = document.getElementById("deptContent")
+      if (!list.length) {
+        box.innerHTML = `<div class="empty-wrap" style="padding:48px 40px"><div class="empty-title">No matches</div><div class="empty-text">No departments match your search.</div></div>`
+        return
+      }
+      box.innerHTML = `<div class="dept-list">${list.map(d => {
+        const ownerLabel = isAdmin ? (ownerNamesMap[d.user_id] || 'Unknown') : null
         const subText = isAdmin
           ? `${ownerLabel}${d.head_name ? ' · Head: ' + d.head_name : ''}`
           : (d.head_name ? 'Head: ' + d.head_name : 'Click to manage teams &amp; members')
@@ -318,6 +342,19 @@
           </button>
         </div>`
       }).join('')}</div>`
+    }
+
+    window.filterDepts = function() {
+      const q = document.getElementById("deptSearch").value.trim().toLowerCase()
+      if (!q) { renderDeptCards(allDepts); return }
+      const filtered = allDepts.filter(d => {
+        const owner = (ownerNamesMap[d.user_id] || '').toLowerCase()
+        return (d.name || '').toLowerCase().includes(q)
+          || owner.includes(q)
+          || (d.head_name || '').toLowerCase().includes(q)
+          || (d.head_email || '').toLowerCase().includes(q)
+      })
+      renderDeptCards(filtered)
     }
 
     window.deleteDept = async function(id, name) {
