@@ -505,7 +505,8 @@
       return (n || '').toLowerCase().replace(/__c$/, '').replace(/[^a-z0-9]/g, '')
     }
     const ALWAYS_ENABLED_SET = new Set(ALWAYS_ENABLED_TYPES.map(normTypeName))
-    function isAlwaysEnabled(name) { return ALWAYS_ENABLED_SET.has(normTypeName(name)) }
+    // Locking disabled: no type is protected — every type can be enabled/disabled freely.
+    function isAlwaysEnabled(name) { return false }
 
     const PRIORITIES = [
       { key:'low',    label:'Low',    color:'#9ca3af' },
